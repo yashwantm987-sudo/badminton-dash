@@ -1,0 +1,4 @@
+.worktrees/
+.claude/launch.json
+.superpowers/
+node_modules/
