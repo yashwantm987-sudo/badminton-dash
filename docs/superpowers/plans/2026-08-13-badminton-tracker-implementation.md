@@ -1969,17 +1969,17 @@ function renderBracketMatchSection() {
 
   matchSectionEl.innerHTML = html;
 
-  document.getElementById('sf1a').addEventListener('change', function (e) { bracket.sf1.a = e.target.value; renderMatchSection(); attachValidation(); });
-  document.getElementById('sf1b').addEventListener('change', function (e) { bracket.sf1.b = e.target.value; renderMatchSection(); attachValidation(); });
+  document.getElementById('sf1a').addEventListener('change', function (e) { bracket.sf1.a = e.target.value; bracket.final = undefined; bracket.thirdPlace = undefined; renderMatchSection(); attachValidation(); });
+  document.getElementById('sf1b').addEventListener('change', function (e) { bracket.sf1.b = e.target.value; bracket.final = undefined; bracket.thirdPlace = undefined; renderMatchSection(); attachValidation(); });
   document.getElementById('sf1sa').addEventListener('input', function (e) { bracket.sf1.scoreA = e.target.value; attachValidation(); });
-  document.getElementById('sf1sa').addEventListener('change', function (e) { bracket.sf1.scoreA = e.target.value; renderMatchSection(); attachValidation(); });
+  document.getElementById('sf1sa').addEventListener('change', function (e) { bracket.sf1.scoreA = e.target.value; bracket.final = undefined; bracket.thirdPlace = undefined; renderMatchSection(); attachValidation(); });
   document.getElementById('sf1sb').addEventListener('input', function (e) { bracket.sf1.scoreB = e.target.value; attachValidation(); });
-  document.getElementById('sf1sb').addEventListener('change', function (e) { bracket.sf1.scoreB = e.target.value; renderMatchSection(); attachValidation(); });
+  document.getElementById('sf1sb').addEventListener('change', function (e) { bracket.sf1.scoreB = e.target.value; bracket.final = undefined; bracket.thirdPlace = undefined; renderMatchSection(); attachValidation(); });
   var sf2sa = document.getElementById('sf2sa'), sf2sb = document.getElementById('sf2sb');
   if (sf2sa) sf2sa.addEventListener('input', function (e) { bracket.sf2.scoreA = e.target.value; attachValidation(); });
-  if (sf2sa) sf2sa.addEventListener('change', function (e) { bracket.sf2.scoreA = e.target.value; renderMatchSection(); attachValidation(); });
+  if (sf2sa) sf2sa.addEventListener('change', function (e) { bracket.sf2.scoreA = e.target.value; bracket.final = undefined; bracket.thirdPlace = undefined; renderMatchSection(); attachValidation(); });
   if (sf2sb) sf2sb.addEventListener('input', function (e) { bracket.sf2.scoreB = e.target.value; attachValidation(); });
-  if (sf2sb) sf2sb.addEventListener('change', function (e) { bracket.sf2.scoreB = e.target.value; renderMatchSection(); attachValidation(); });
+  if (sf2sb) sf2sb.addEventListener('change', function (e) { bracket.sf2.scoreB = e.target.value; bracket.final = undefined; bracket.thirdPlace = undefined; renderMatchSection(); attachValidation(); });
   var fsa = document.getElementById('finalsa'), fsb = document.getElementById('finalsb');
   if (fsa) fsa.addEventListener('input', function (e) { bracket.final = bracket.final || {}; bracket.final.scoreA = e.target.value; attachValidation(); });
   if (fsb) fsb.addEventListener('input', function (e) { bracket.final = bracket.final || {}; bracket.final.scoreB = e.target.value; attachValidation(); });
