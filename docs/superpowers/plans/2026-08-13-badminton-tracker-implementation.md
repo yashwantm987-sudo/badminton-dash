@@ -862,7 +862,7 @@ module.exports = {
 - [ ] **Step 4: Run tests to verify they pass**
 
 Run: `node --test dev/render.test.js`
-Expected: PASS — `4 passing`
+Expected: PASS — `5 passing`
 
 - [ ] **Step 5: Commit**
 
@@ -906,7 +906,7 @@ test('renderDayCard shows rank, record, diff, points, and a gold/tied marker', (
   assert.ok(html.includes('2–0'));
   assert.ok(html.includes('+9'));
   assert.ok(html.includes('+3 each'));
-  assert.ok(html.includes('0 each'));
+  assert.ok(html.includes('+1 each'));
 });
 
 test('renderDayCard flags a pending bracket day', () => {
@@ -1010,7 +1010,7 @@ module.exports = {
 - [ ] **Step 4: Run tests to verify they pass**
 
 Run: `node --test dev/render.test.js`
-Expected: PASS — `7 passing`
+Expected: PASS — `8 passing`
 
 - [ ] **Step 5: Commit**
 
@@ -1132,7 +1132,7 @@ module.exports = {
 - [ ] **Step 4: Run tests to verify they pass**
 
 Run: `node --test dev/render.test.js`
-Expected: PASS — `9 passing`
+Expected: PASS — `10 passing`
 
 - [ ] **Step 5: Commit**
 
@@ -1264,7 +1264,7 @@ module.exports = {
 - [ ] **Step 4: Run tests to verify they pass**
 
 Run: `node --test dev/render.test.js`
-Expected: PASS — `11 passing`. Also run `node --test dev/` to confirm both files together report `23 passing` (12 from scoring.test.js + 11 from render.test.js).
+Expected: PASS — `12 passing`. Also run `node --test dev/` to confirm both files together report `24 passing` (12 from scoring.test.js + 12 from render.test.js).
 
 - [ ] **Step 5: Commit**
 
