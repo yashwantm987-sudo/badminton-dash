@@ -1425,7 +1425,7 @@ The `panel-partners` and `panel-matches` divs in Step 3 each accidentally have t
 Serve the file locally (e.g. `python -m http.server 8934` from the repo root) and open `http://localhost:8934/badminton-dash.html`. Confirm:
 - No console errors.
 - The page title bar shows "Badminton Dash" correctly (not mojibake) — confirms the UTF-8 meta tag is working.
-- Leaderboard area is empty (no players have points yet) but doesn't error.
+- Leaderboard shows all 8 players tied for 1st place at 0 points each (everyone starts exactly tied, so the leaderboard is not visually empty — this confirms tie-grouping renders correctly even before any match day exists).
 - Match History tab shows "No match days recorded yet."
 - Player Stats tab shows a table with all 8 players, each row 0 points/0 matches/0%/0/0/0.
 - Partnerships tab shows "No partnerships recorded yet."
