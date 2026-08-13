@@ -209,7 +209,10 @@ used decoratively) so they stay legible as "good/bad" signals.
 **Type:** Bold condensed display face for numerals/headings (scoreboard
 feel), clean humanist sans for names/body text. System font stacks only —
 no external font loading, since the file must work fully offline from a
-local copy or Drive.
+local copy or Drive. The file must declare `<meta charset="UTF-8">`
+explicitly — without it, special characters used throughout (en dashes,
+middle dots) render as mojibake depending on how the file happens to be
+served or opened, which surfaced during mockup testing.
 
 **Layout:** A navy "control zone" spans the top of the page and contains,
 top to bottom: the page header, a persistent horizontally-scrolling
