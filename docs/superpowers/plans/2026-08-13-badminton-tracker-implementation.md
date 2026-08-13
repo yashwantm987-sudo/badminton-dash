@@ -1925,12 +1925,12 @@ function renderBracketMatchSection() {
 
   var html = '';
   html += '<div class="bracket-match"><div class="stage-label">Semifinal 1</div><div class="vs-line">' +
-    '<select id="sf1a">' + teamOptionsForBracket(sf1a) + '</select>' +
+    '<select id="sf1a">' + teamOptionsForBracket(sf1a, sf1b) + '</select>' +
     '<input type="number" id="sf1sa" min="0" placeholder="0" value="' + (bracket.sf1.scoreA || '') + '">' +
     '<span class="vs-sep">–</span>' +
     '<input type="number" id="sf1sb" min="0" placeholder="0" value="' + (bracket.sf1.scoreB || '') + '">' +
     '</div><div class="vs-line" style="margin-top:6px;">' +
-    '<select id="sf1b">' + teamOptionsForBracket(sf1b) + '</select><span></span><span></span><span></span></div></div>';
+    '<select id="sf1b">' + teamOptionsForBracket(sf1b, sf1a) + '</select><span></span><span></span><span></span></div></div>';
 
   if (sf1a !== '' && sf1b !== '') {
     var sf2a = remaining[0], sf2b = remaining[1];
