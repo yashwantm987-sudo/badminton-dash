@@ -41,12 +41,13 @@ const TOURNAMENT_DATA = {
         ["Kartik", "Shajith"]
       ],
       matches: [
-        { teamA: 0, teamB: 1, scoreA: 21, scoreB: 15 },
-        { teamA: 2, teamB: 3, scoreA: 21, scoreB: 18 },
-        { teamA: 0, teamB: 2, scoreA: 19, scoreB: 21 }
-        // ...as many matches as were actually played that day; round
-        // robin or partial schedule both work, since matches are added
-        // one at a time against whichever two teams played
+        { teamA: 0, teamB: 1, scoreA: 21, scoreB: 15, stage: "semifinal1" },
+        { teamA: 2, teamB: 3, scoreA: 21, scoreB: 18, stage: "semifinal2" },
+        { teamA: 0, teamB: 2, scoreA: 19, scoreB: 21, stage: "final" },
+        { teamA: 1, teamB: 3, scoreA: 21, scoreB: 17, stage: "thirdPlace" }
+        // ...or, for a round-robin day (3 teams, or 5+ teams), matches
+        // omit `stage` entirely and are just added one at a time against
+        // whichever two teams actually played, in any number
       ]
     }
   ]
@@ -64,17 +65,38 @@ Rules:
 - `matches` reference teams by index into that day's `teams` array, plus a
   single-game score (`scoreA`, `scoreB`). A day can have any number of
   matches (not all teams need to play each other the same number of times).
+- Each match has an optional `stage`: `"semifinal1"`, `"semifinal2"`,
+  `"final"`, `"thirdPlace"`, or omitted (round-robin/unstaged). Stage tags
+  are only used for **4-team days** that play a bracket, which is the
+  normal format when exactly 4 teams show up. 3-team days (no bracket
+  possible) and 5+ team days always use round-robin, unstaged matches.
 - **Rank is not stored — it's derived** from `matches` each time the page
-  loads: for every team, tally match wins, then total point differential
-  (points scored − points conceded across all their matches that day) as
-  tiebreak. Sorting descending gives the day's 1st, 2nd, 3rd, ... order.
-  If a tiebreak is still exactly equal, the tied teams share a rank and
-  both receive that rank's points; the next distinct team's rank accounts
-  for the tie-group size (standard "1-2-2-4" competition ranking, not
-  "1-2-2-3").
+  loads, using one of two methods depending on what was logged that day:
+  - **Bracket ranking** (used whenever a `"final"`-stage match exists for
+    the day): the Final's winner is 1st, its loser is 2nd. If a
+    `"thirdPlace"`-stage match also exists, its winner is 3rd and its
+    loser is 4th. `"semifinal1"`/`"semifinal2"` results aren't needed for
+    ranking (the Final/3rd-place results already imply who won each
+    semifinal) — they're recorded for match-log/partnership/match-stats
+    purposes. A 4-team day always plays a 3rd-place match once a Final is
+    played, so an incomplete bracket (Final logged but no 3rd-place match
+    yet) simply leaves that day's rank as "not yet finalized" until it's
+    added — the UI shouldn't guess at 3rd/4th from semifinal results alone.
+  - **Round-robin ranking** (used when no `"final"`-stage match exists,
+    i.e. 3-team or 5+-team days): for every team, tally match wins, then
+    total point differential (points scored − points conceded across all
+    their matches that day) as tiebreak. Sorting descending gives the
+    day's 1st, 2nd, 3rd, ... order. If a tiebreak is still exactly equal,
+    the tied teams share a rank and both receive that rank's points; the
+    next distinct team's rank accounts for the tie-group size (standard
+    "1-2-2-4" competition ranking, not "1-2-2-3"). If literally every team
+    ends up in one tied group with no separation possible at all, the day
+    is **unresolved**: it stays in history and still counts toward
+    matches-played, partnership, and match-log stats for everyone who
+    played, but nobody earns rank-based points for that day.
 - Ranks 1–4 earn points (see below). Teams ranked 5th or lower (only
-  possible with 5+ teams in a day) earn 0 points, same as 4th, but still
-  count toward matches-played / win-rate / partnership stats.
+  possible in round-robin days with 5+ teams) earn 0 points, same as 4th,
+  but still count toward matches-played / win-rate / partnership stats.
 - A player's name is the join key across match days (no separate ID). If a
   name is corrected/renamed via "Manage Players," all historical entries
   referencing the old name are updated so history stays attached to the
@@ -140,11 +162,18 @@ scrolling into match history.
      3), each with two player dropdowns sourced from the roster.
      Validation: no player appears twice in the same day's teams, minimum
      3 teams before moving on.
-  2. **Log matches**: once teams exist for the day, repeatable "Add Match"
-     rows — pick Team A, Team B (from that day's teams, shown by player
-     names for clarity), and enter the score (e.g. 21-15). Add as many
-     matches as were actually played. Final ranks and points are computed
-     automatically from these once saved (see Data model).
+  2. **Log matches** — the form differs by team count:
+     - **Exactly 4 teams**: four fixed slots — Semifinal 1, Semifinal 2,
+       Final, 3rd-Place Match. Pick the two teams for each semifinal and
+       enter its score; once both semifinals have scores, the Final's and
+       3rd-Place Match's team slots auto-fill from the winners/losers
+       (read-only — no re-picking) and just need scores entered. Rank is
+       computed directly from the Final and 3rd-Place results (see Data
+       model).
+     - **3 teams, or 5+ teams**: repeatable "Add Match" rows — pick any
+       two of that day's teams and enter the score, add as many matches
+       as were actually played (round robin or partial). Rank is computed
+       from wins + point differential.
 - **Edit / delete a past match day**: pick a day from a list, adjust its
   teams or match scores, or remove the day entirely (for data-entry
   corrections). Ranks/points recompute automatically after any edit.
@@ -159,32 +188,45 @@ scrolling into match history.
   `localStorage` as a crash-recovery safety net, but the exported file is
   always the authoritative record.
 
-## Visual design — "Match Card / Scoreboard"
+## Visual design — "Night Match" (navy control zone + light content)
 
 **Palette:**
 | Token | Hex | Use |
 |---|---|---|
-| Court green | `#0B3D2E` | Header/background |
-| Chalk white | `#F7F5F0` | Card surfaces |
-| Muted gold | `#D4AF37` | 1st place / leader accent |
-| Sage | `#8FA998` | Secondary text/dividers |
-| Warm red | `#C0392B` | Destructive actions only (delete, in Edit Mode) |
+| Navy | `#161F38` | Header / leaderboard / tab-bar zone |
+| Navy deep | `#0F1526` | Recessed surfaces within the navy zone (leaderboard chips) |
+| Paper | `#F2EFE7` | Page content background (below the navy zone) |
+| Card white | `#FFFFFF` | Card/table surfaces on the paper background |
+| Amber | `#F2A93C` | Brand accent — leader highlight, 1st place, active tab |
+| Teal | `#1E9C79` | Semantic positive (win margins, positive streak) |
+| Coral | `#E1503F` | Semantic negative (loss margins, destructive actions) |
+| Periwinkle | `#A3B0D1` | Secondary text on navy |
+| Ink | `#1B2333` | Primary text on light/card surfaces |
 
-**Type:** Bold condensed display face for numerals/leaderboard (scoreboard
-feel), clean humanist sans for names/body text. System font stacks only
-(no external font loading — must work fully offline from a local file or
-Drive).
+Amber is the single decorative accent; teal/coral are semantic only (never
+used decoratively) so they stay legible as "good/bad" signals.
 
-**Layout:** Persistent compact leaderboard strip at top. Below it, match
-days rendered as stacked cards, most recent first, each showing its ranked
-teams with a gold accent on the 1st-place row. Per-player detail stats
-(streaks, championships, win %) live in an expandable row or dedicated
-"Player Stats" section.
+**Type:** Bold condensed display face for numerals/headings (scoreboard
+feel), clean humanist sans for names/body text. System font stacks only —
+no external font loading, since the file must work fully offline from a
+local copy or Drive.
+
+**Layout:** A navy "control zone" spans the top of the page and contains,
+top to bottom: the page header, a persistent horizontally-scrolling
+leaderboard strip (always visible, never buried behind a tab), and a tab
+bar — **Match History**, **Player Stats**, **Partnerships**, **Match
+Stats**. Only one tab's content is visible at a time, below the navy zone
+on the lighter paper background, keeping any single screen focused rather
+than one long scroll. Match History shows match days as stacked cards,
+most recent first, each showing its ranked teams with an amber accent on
+the 1st-place row(s). Match Stats includes both aggregate tiles (total
+matches, closest match, most lopsided win, average margin) and a full
+day-grouped log of every individual match with its score.
 
 **Signature element:** rank-1 rows get a small custom inline-SVG
-shuttlecock mark instead of a generic emoji medal or numbered badge —
-ties the scoring visual directly to badminton rather than a borrowed
-trophy metaphor.
+shuttlecock mark in amber instead of a generic emoji medal or numbered
+badge — ties the scoring visual directly to badminton rather than a
+borrowed trophy metaphor.
 
 ## Testing / verification
 
@@ -194,6 +236,13 @@ manual in-browser:
   results (including a tie-in-standings case) and confirm ranks, points,
   and leaderboard all update correctly, including 0-point handling below
   rank 4 and shared-rank point handling.
+- Log a full 4-team bracket day (both semifinals, Final, 3rd-Place Match)
+  and confirm rank/points come from bracket results, not win-tally.
+  Confirm the Final/3rd-Place team slots correctly auto-fill from
+  semifinal winners/losers.
+- Construct a round-robin day where every team ends up exactly tied with
+  no possible separation; confirm the day is recorded (counts toward
+  matches played/partnerships) but awards 0 points to everyone.
 - Add/rename a player mid-session; confirm alphabetical ordering and that
   renaming propagates through existing match-day and partnership history.
 - Verify streak logic against a hand-built scenario: a player who wins,
