@@ -1593,6 +1593,7 @@ function addPlayer() {
   msg.textContent = 'Added ' + name + ' to the roster.';
   msg.classList.add('ok');
   renderRoster();
+  renderTeamRows();
   renderApp();
 }
 ```
