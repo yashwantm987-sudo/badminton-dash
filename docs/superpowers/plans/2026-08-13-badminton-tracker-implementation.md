@@ -2102,7 +2102,7 @@ git commit -m "Add localStorage crash-recovery persistence"
 - Modify: `badminton-dash.html`
 
 **Interfaces:**
-- Consumes: `TOURNAMENT_DATA` (Task 12)
+- Consumes: `TOURNAMENT_DATA` (Task 12), `closeModal()` (Task 13)
 - Produces: working "Save & Export" button that downloads an updated, self-contained copy of the file
 
 - [ ] **Step 1: Implement the export handler**
@@ -2113,6 +2113,14 @@ Append to the `<script>` block:
 document.getElementById('exportBtn').addEventListener('click', function () {
   var dataScript = document.getElementById('tournament-data');
   dataScript.textContent = JSON.stringify(TOURNAMENT_DATA, null, 2);
+
+  // exportBtn lives inside the modal footer, so the modal (and possibly the
+  // save-confirm banner / restore banner) is live in the DOM at the exact
+  // moment this fires — clear that transient UI state before snapshotting,
+  // or the exported file would open with the modal stuck open.
+  closeModal();
+  document.getElementById('saveConfirm').classList.remove('show');
+  document.getElementById('restoreBanner').style.display = 'none';
 
   var html = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
   var blob = new Blob([html], { type: 'text/html' });
@@ -2129,7 +2137,7 @@ document.getElementById('exportBtn').addEventListener('click', function () {
 
 - [ ] **Step 2: Verify in a browser**
 
-Reload the page fresh. Add a match day and a new player through Edit Mode. Click "Save & Export" — confirm a `badminton-dash.html` file downloads. Open the downloaded file directly (double-click, or drag into a browser tab — not via the local dev server, to simulate the real Google Drive / local-file usage pattern). Confirm: the added player and match day are present, the leaderboard/stats are correctly computed from them, and clicking "Edit" still works (the exported copy is a fully independent, working file, not just a static snapshot).
+Reload the page fresh. Add a match day and a new player through Edit Mode, **then click "Save & Export" while the modal is still open** (this is the only way to reach the button, so it's the real usage path — not an edge case). Confirm a `badminton-dash.html` file downloads. Open the downloaded file directly (double-click, or drag into a browser tab — not via the local dev server, to simulate the real Google Drive / local-file usage pattern). Confirm: **the modal is closed on load, not stuck open** (this is the specific bug the `closeModal()`/banner-clearing calls in Step 1 prevent — verify it, don't just assume it), the added player and match day are present, the leaderboard/stats are correctly computed from them, and clicking "Edit" still works (the exported copy is a fully independent, working file, not just a static snapshot).
 
 - [ ] **Step 3: Commit**
 
