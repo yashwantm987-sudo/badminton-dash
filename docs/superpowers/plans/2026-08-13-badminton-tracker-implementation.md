@@ -2205,6 +2205,19 @@ function deleteDay(index) {
   if (!confirm('Delete this match day? This cannot be undone.')) return;
   TOURNAMENT_DATA.matchDays.splice(index, 1);
   persistToLocalStorage();
+
+  // Deleting a day shifts every later index down by one. If an edit is
+  // in progress (Add Match Day switched to "Edit Match Day" mode, not yet
+  // saved), its editingDayIndex may now silently point at a different day
+  // than the one actually being edited — saving would overwrite the wrong
+  // day. Cancel any in-progress edit rather than risk that.
+  if (editingDayIndex !== null) {
+    editingDayIndex = null;
+    document.getElementById('modalTitle').textContent = 'Edit';
+    resetPendingDay();
+    renderAddMatchDayForm();
+  }
+
   renderApp();
   renderPastDaysList();
 }
