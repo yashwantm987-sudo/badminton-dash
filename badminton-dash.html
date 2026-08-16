@@ -1142,18 +1142,49 @@
     return list;
   }
 
-  function computeNormalGameStats(players, normalGames) {
+  function computeCombinedPlayerStats(players, tournaments, normalGames) {
+    var allMatches = [];
+
+    (tournaments || []).forEach(function (t) {
+      (t.fixtures || []).forEach(function (f, idx) {
+        if (f.status !== 'completed' || f.scoreA === null || f.scoreB === null) return;
+        var teamA = t.teams[f.teamA] || [];
+        var teamB = t.teams[f.teamB] || [];
+        allMatches.push({
+          id: (t.date || '1970-01-01') + '_' + (t.id || '') + '_' + idx,
+          teamA: teamA,
+          teamB: teamB,
+          scoreA: f.scoreA,
+          scoreB: f.scoreB
+        });
+      });
+    });
+
+    (normalGames || []).forEach(function (g) {
+      if (g.scoreA === null || g.scoreB === null) return;
+      allMatches.push({
+        id: g.id || '',
+        teamA: g.teamA || [],
+        teamB: g.teamB || [],
+        scoreA: g.scoreA,
+        scoreB: g.scoreB
+      });
+    });
+
+    allMatches.sort(function (a, b) { return a.id.localeCompare(b.id); });
+
     return players.map(function (name) {
       var played = 0, wins = 0, streak = 0, maxStreak = 0;
-      var sorted = normalGames.slice().sort(function (a, b) { return a.id.localeCompare(b.id); });
 
-      sorted.forEach(function (g) {
-        var onA = g.teamA.indexOf(name) !== -1;
-        var onB = g.teamB.indexOf(name) !== -1;
+      allMatches.forEach(function (m) {
+        var onA = m.teamA.indexOf(name) !== -1;
+        var onB = m.teamB.indexOf(name) !== -1;
         if (!onA && !onB) return;
+
         played++;
-        var aWon = g.scoreA > g.scoreB;
+        var aWon = m.scoreA > m.scoreB;
         var won = (onA && aWon) || (onB && !aWon);
+
         if (won) {
           wins++;
           streak++;
@@ -1175,6 +1206,7 @@
     }).sort(function (a, b) {
       if (b.wins !== a.wins) return b.wins - a.wins;
       if (b.winRate !== a.winRate) return b.winRate - a.winRate;
+      if (b.played !== a.played) return b.played - a.played;
       return a.name.localeCompare(b.name);
     });
   }
@@ -1696,7 +1728,7 @@
 
   function renderPlayerStatsPanel() {
     var el = document.getElementById('playerStatsEl');
-    var stats = computeNormalGameStats(TOURNAMENT_DATA.players, TOURNAMENT_DATA.normalGames);
+    var stats = computeCombinedPlayerStats(TOURNAMENT_DATA.players, TOURNAMENT_DATA.tournaments, TOURNAMENT_DATA.normalGames);
     var rows = stats.map(function (s) {
       return '<tr><td class="name">' + escapeHtml(s.name) + '</td>' +
         '<td class="num">' + s.played + '</td><td class="num">' + s.wins + '</td><td class="num">' + s.losses + '</td>' +
