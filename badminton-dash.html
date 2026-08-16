@@ -1685,6 +1685,144 @@
 
   // ---- end tournament tab ----
 
+  // ---- normal games tab ----
+
+  function computeNormalGameStats(players, normalGames) {
+    return players.map(function (name) {
+      var gamesPlayed = 0, wins = 0;
+      var playedWins = [];
+
+      normalGames.forEach(function (g) {
+        var onA = g.teamA.indexOf(name) !== -1;
+        var onB = g.teamB.indexOf(name) !== -1;
+        if (!onA && !onB) return;
+        gamesPlayed++;
+        var isWin = (onA && g.scoreA > g.scoreB) || (onB && g.scoreB > g.scoreA);
+        if (isWin) wins++;
+        playedWins.push(isWin);
+      });
+
+      var currentStreak = 0;
+      for (var i = playedWins.length - 1; i >= 0; i--) {
+        if (playedWins[i]) currentStreak++; else break;
+      }
+
+      return {
+        name: name,
+        points: wins * 3,
+        gamesPlayed: gamesPlayed,
+        wins: wins,
+        winPct: gamesPlayed > 0 ? wins / gamesPlayed : 0,
+        currentStreak: currentStreak
+      };
+    });
+  }
+
+  function computeNormalLeaderboard(playerStats) {
+    return playerStats.slice().sort(function (a, b) {
+      if (b.points !== a.points) return b.points - a.points;
+      if (b.winPct !== a.winPct) return b.winPct - a.winPct;
+      return a.name.localeCompare(b.name);
+    });
+  }
+
+  var showNewGameForm = false;
+  var newGameState = { teamA: { a: '', b: '' }, teamB: { a: '', b: '' }, scoreA: '', scoreB: '' };
+
+  function renderNormalGamesPanel() {
+    var el = document.getElementById('panel-normal');
+    if (!el) return;
+    var html = '';
+
+    html += '<button class="btn-new" id="newGameBtn">+ New Game</button>';
+
+    if (showNewGameForm) {
+      html += '<div class="new-game-form" id="newGameFormEl">' +
+        '<div class="form-row"><span class="form-label">Date</span>' +
+        '<input type="date" id="ngDate" value="' + new Date().toISOString().slice(0, 10) + '"></div>' +
+        '<div class="form-row"><span class="form-label">Team 1</span></div>' +
+        '<div class="form-row">' +
+        '<select class="ng-sel" data-t="A" data-s="a">' + playerOptions(newGameState.teamA.a) + '</select>' +
+        '<select class="ng-sel" data-t="A" data-s="b">' + playerOptions(newGameState.teamA.b) + '</select></div>' +
+        '<div class="form-row"><span class="form-label">Team 2</span></div>' +
+        '<div class="form-row">' +
+        '<select class="ng-sel" data-t="B" data-s="a">' + playerOptions(newGameState.teamB.a) + '</select>' +
+        '<select class="ng-sel" data-t="B" data-s="b">' + playerOptions(newGameState.teamB.b) + '</select></div>' +
+        '<div class="form-row"><span class="form-label">Score</span></div>' +
+        '<div class="score-row" style="border:none;padding:0;margin:0;">' +
+        '<input type="number" min="0" inputmode="numeric" id="ngScoreA" placeholder="0" value="' + newGameState.scoreA + '">' +
+        '<span class="sep">–</span>' +
+        '<input type="number" min="0" inputmode="numeric" id="ngScoreB" placeholder="0" value="' + newGameState.scoreB + '">' +
+        '<button class="btn-save" id="ngSave">Save</button></div>' +
+        '<p class="validation-msg" id="ngMsg"></p></div>';
+    }
+
+    if (TOURNAMENT_DATA.normalGames.length > 0) {
+      html += '<p class="section-label">Recent Games</p>';
+      var sorted = TOURNAMENT_DATA.normalGames.slice().sort(function (a, b) {
+        return a.date < b.date ? 1 : a.date > b.date ? -1 : (a.id < b.id ? 1 : -1);
+      });
+      sorted.forEach(function (g) {
+        var aWon = g.scoreA > g.scoreB;
+        var winner = aWon ? g.teamA : g.teamB;
+        var loser = aWon ? g.teamB : g.teamA;
+        var winScore = Math.max(g.scoreA, g.scoreB);
+        var loseScore = Math.min(g.scoreA, g.scoreB);
+        html += '<div class="normal-game-card">' +
+          '<div style="display:flex;align-items:center;justify-content:space-between;">' +
+          '<span class="ng-teams"><span class="win">' + escapeHtml(winner[0]) + ' & ' + escapeHtml(winner[1]) +
+          '</span><span class="vs">def.</span><span class="lose">' + escapeHtml(loser[0]) + ' & ' + escapeHtml(loser[1]) + '</span></span>' +
+          '<span class="ng-score">' + winScore + '–' + loseScore + '</span></div>' +
+          '<div class="ng-date">' + formatDayHeading(g.date) + '</div></div>';
+      });
+    } else if (!showNewGameForm) {
+      html += '<p style="color:var(--ink-soft);font-size:13px;">No games played yet.</p>';
+    }
+
+    el.innerHTML = html;
+
+    document.getElementById('newGameBtn').addEventListener('click', function () {
+      showNewGameForm = !showNewGameForm;
+      newGameState = { teamA: { a: '', b: '' }, teamB: { a: '', b: '' }, scoreA: '', scoreB: '' };
+      renderNormalGamesPanel();
+    });
+
+    if (showNewGameForm) {
+      el.querySelectorAll('.ng-sel').forEach(function (sel) {
+        sel.addEventListener('change', function () {
+          var team = sel.dataset.t === 'A' ? 'teamA' : 'teamB';
+          newGameState[team][sel.dataset.s] = sel.value;
+        });
+      });
+
+      document.getElementById('ngSave').addEventListener('click', function () {
+        var a = newGameState.teamA, b = newGameState.teamB;
+        var sA = +document.getElementById('ngScoreA').value;
+        var sB = +document.getElementById('ngScoreB').value;
+        var msg = document.getElementById('ngMsg');
+        if (!a.a || !a.b || !b.a || !b.b) { msg.textContent = 'Select all 4 players.'; return; }
+        if (sA === 0 && sB === 0) { msg.textContent = 'Enter scores.'; return; }
+        if (sA === sB) { msg.textContent = 'Scores cannot be tied.'; return; }
+
+        TOURNAMENT_DATA.normalGames.push({
+          id: 'n_' + Date.now(),
+          date: document.getElementById('ngDate').value,
+          teamA: [a.a, a.b],
+          teamB: [b.a, b.b],
+          scoreA: sA,
+          scoreB: sB
+        });
+        persistToLocalStorage();
+        showNewGameForm = false;
+        newGameState = { teamA: { a: '', b: '' }, teamB: { a: '', b: '' }, scoreA: '', scoreB: '' };
+        renderNormalGamesPanel();
+        renderApp();
+      });
+    }
+  }
+
+  // ---- end normal games tab ----
+
   function renderApp() {
     var playerStats = computePlayerStats(TOURNAMENT_DATA.players, TOURNAMENT_DATA.matchDays);
     var leaderboard = computeLeaderboard(playerStats);
@@ -1697,6 +1835,8 @@
 
     if (currentView.tab === 'tournament') {
       renderTournamentPanel();
+    } else if (currentView.tab === 'normal') {
+      renderNormalGamesPanel();
     }
   }
 
