@@ -1816,6 +1816,13 @@
     }
   });
 
+  function initSync() {
+    var config = getSyncConfig();
+    if (config && config.scriptUrl) {
+      syncPull();
+    }
+  }
+
   // Initial App Render & Sync Init
   renderApp();
   initSync();
