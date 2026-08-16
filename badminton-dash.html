@@ -724,7 +724,9 @@
       return '<p style="color:var(--ink-soft);font-size:13px;">No partnerships recorded yet.</p>';
     }
     var mostPlayed = partnershipStats.slice().sort(function (a, b) { return b.timesPlayed - a.timesPlayed; })[0];
-    var top = partnershipStats.slice(0, 4);
+    var top = partnershipStats.slice(0, 4).filter(function (p) {
+      return p.players[0] !== mostPlayed.players[0] || p.players[1] !== mostPlayed.players[1];
+    });
 
     var topHtml = top.map(function (p) {
       return '<div class="partner-card top"><div><div class="names">' + escapeHtml(p.players[0]) + ' &amp; ' + escapeHtml(p.players[1]) + '</div>' +
@@ -756,6 +758,7 @@
 
     tournament.fixtures.forEach(function (f) {
       if (f.status !== 'completed') return;
+      if (f.stage !== 'group') return;
       standings[f.teamA].played++;
       standings[f.teamB].played++;
       standings[f.teamA].diff += f.scoreA - f.scoreB;
@@ -764,7 +767,7 @@
         standings[f.teamA].wins++;
         standings[f.teamA].pts += 3;
         standings[f.teamB].losses++;
-      } else {
+      } else if (f.scoreB > f.scoreA) {
         standings[f.teamB].wins++;
         standings[f.teamB].pts += 3;
         standings[f.teamA].losses++;
@@ -951,7 +954,8 @@
         var fid = btn.dataset.saveFid;
         var scoreA = +document.getElementById('scoreA_' + fid).value;
         var scoreB = +document.getElementById('scoreB_' + fid).value;
-        if (scoreA === scoreB || (scoreA === 0 && scoreB === 0)) return;
+        if (scoreA === 0 && scoreB === 0) return;
+        if (scoreA === scoreB) { alert('Scores cannot be tied'); return; }
         var ok = saveFixtureScore(t.id, fid, scoreA, scoreB);
         if (ok) {
           activeFixtureId = null;
@@ -1137,19 +1141,6 @@
       currentView.subView = 'fixtures';
       renderTournamentPanel();
     });
-  }
-
-  function createTournament(name, date, teams) {
-    var tournament = {
-      id: 't_' + Date.now(),
-      name: (name || '').trim(),
-      date: date,
-      teams: teams,
-      fixtures: generateRoundRobinFixtures(teams.length)
-    };
-    TOURNAMENT_DATA.tournaments.push(tournament);
-    persistToLocalStorage();
-    return tournament;
   }
 
   // ---- end tournament tab ----
@@ -1466,7 +1457,12 @@
 
   document.getElementById('exportBtn').addEventListener('click', function () {
     var dataStr = JSON.stringify(TOURNAMENT_DATA, null, 2);
+    var banner = document.getElementById('restoreBanner');
+    var bannerWasVisible = banner.style.display;
+    banner.style.display = 'none';
+    closeModal();
     var htmlContent = document.documentElement.outerHTML;
+    banner.style.display = bannerWasVisible;
     var scriptTag = '<' + 'script id="tournament-data" type="application/json">';
     var idx = htmlContent.indexOf(scriptTag);
     if (idx === -1) return;
