@@ -774,50 +774,19 @@
         <button class="modal-close" id="modalClose" type="button" aria-label="Close">&times;</button>
       </div>
       <div class="modal-body">
-        <nav class="modal-subnav">
-          <button class="modal-subtab active" data-subtab="add" type="button">Add Match Day</button>
-          <button class="modal-subtab" data-subtab="past" type="button">Past Days</button>
-          <button class="modal-subtab" data-subtab="players" type="button">Players</button>
-        </nav>
-
-        <div class="modal-subpanel active" id="subpanel-add">
-          <div class="step-block">
-            <div class="step-head"><span class="step-title">1. Teams for the day</span></div>
-            <div class="date-row">
-              <label class="field-label" for="dayDate">Date</label>
-              <input type="date" id="dayDate">
-            </div>
-            <div id="teamRows"></div>
-            <button class="btn btn-add" id="addTeamBtn" type="button">+ Add team</button>
+        <div class="step-block">
+          <div class="step-head"><span class="step-title">Players</span></div>
+          <div class="roster-chips" id="rosterChips"></div>
+          <div class="add-player-row">
+            <input type="text" id="newPlayerInput" placeholder="New player name">
+            <button class="btn btn-add" id="addPlayerBtn" type="button">+ Add player</button>
           </div>
-          <div class="step-block">
-            <div class="step-head"><span class="step-title">2. Match scores</span></div>
-            <div id="matchSection"></div>
-          </div>
-          <p class="validation-msg" id="validationMsg"></p>
-          <div class="save-confirm" id="saveConfirm">✓ Match day saved.</div>
-        </div>
-
-        <div class="modal-subpanel" id="subpanel-past">
-          <div id="pastDaysList"></div>
-        </div>
-
-        <div class="modal-subpanel" id="subpanel-players">
-          <div class="step-block">
-            <div class="step-head"><span class="step-title">Players</span></div>
-            <div class="roster-chips" id="rosterChips"></div>
-            <div class="add-player-row">
-              <input type="text" id="newPlayerInput" placeholder="New player name">
-              <button class="btn btn-add" id="addPlayerBtn" type="button">+ Add player</button>
-            </div>
-            <p class="roster-msg" id="rosterMsg"></p>
-          </div>
+          <p class="roster-msg" id="rosterMsg"></p>
         </div>
       </div>
       <div class="modal-foot">
         <button class="btn btn-secondary" id="exportBtn" type="button">Save &amp; Export</button>
         <button class="btn btn-secondary" id="cancelBtn" type="button">Close</button>
-        <button class="btn btn-primary" id="saveBtn" type="button" disabled>Save match day</button>
       </div>
     </div>
   </div>
@@ -1588,6 +1557,12 @@
     });
   }
 
+  function playerOptions(selected) {
+    return '<option value="">— Select —</option>' + TOURNAMENT_DATA.players.map(function (name) {
+      return '<option value="' + escapeHtml(name) + '"' + (name === selected ? ' selected' : '') + '>' + escapeHtml(name) + '</option>';
+    }).join('');
+  }
+
   var newTournamentState = { teams: [{ a: '', b: '' }, { a: '', b: '' }, { a: '', b: '' }] };
 
   function showNewTournamentForm() {
@@ -1984,285 +1959,9 @@
 
   var backdrop = document.getElementById('modalBackdrop');
 
-  var pendingDay = {
-    teams: [{ a: '', b: '' }, { a: '', b: '' }, { a: '', b: '' }],
-    rrMatches: [{ teamA: '', teamB: '', scoreA: '', scoreB: '' }],
-    bracket: { sf1: { a: '', b: '' }, sf2: { a: '', b: '' } }
-  };
-
-  var teamRowsEl = document.getElementById('teamRows');
-  var matchSectionEl = document.getElementById('matchSection');
-  var saveBtn = document.getElementById('saveBtn');
-  var validationMsg = document.getElementById('validationMsg');
-
-  function resetPendingDay() {
-    pendingDay = {
-      teams: [{ a: '', b: '' }, { a: '', b: '' }, { a: '', b: '' }],
-      rrMatches: [{ teamA: '', teamB: '', scoreA: '', scoreB: '' }],
-      bracket: { sf1: { a: '', b: '' }, sf2: { a: '', b: '' } }
-    };
-    document.getElementById('dayDate').value = new Date().toISOString().slice(0, 10);
-  }
-
-  function playerOptions(selected) {
-    return '<option value="">— Select —</option>' + TOURNAMENT_DATA.players.map(function (name) {
-      return '<option value="' + escapeHtml(name) + '"' + (name === selected ? ' selected' : '') + '>' + escapeHtml(name) + '</option>';
-    }).join('');
-  }
-
-  function teamLabel(i) {
-    var t = pendingDay.teams[i];
-    if (t.a && t.b) return t.a + ' & ' + t.b;
-    return 'Team ' + (i + 1) + ' (incomplete)';
-  }
-
-  function teamOptionsForBracket(selected, excludeIdx) {
-    return '<option value="">— Select —</option>' + pendingDay.teams.map(function (t, i) {
-      if (String(i) === String(excludeIdx)) return '';
-      return '<option value="' + i + '"' + (String(i) === String(selected) ? ' selected' : '') + '>' + teamLabel(i) + '</option>';
-    }).join('');
-  }
-
-  function renderMatchSection() {
-    var teamsComplete = pendingDay.teams.every(function (t) { return t.a && t.b; });
-    if (!teamsComplete) {
-      matchSectionEl.innerHTML = '<p style="font-size:12.5px;color:var(--ink-soft);">Finish naming all teams above to enter scores.</p>';
-      return;
-    }
-
-    if (pendingDay.teams.length === 4) {
-      renderBracketMatchSection();
-      return;
-    }
-
-    var rows = pendingDay.rrMatches.map(function (m, i) {
-      return '<div class="rr-match-row">' +
-        '<select data-i="' + i + '" data-f="teamA" class="rr-select">' + teamOptionsForBracket(m.teamA, m.teamB) + '</select>' +
-        '<input type="number" min="0" placeholder="0" data-i="' + i + '" data-f="scoreA" class="rr-score" value="' + m.scoreA + '">' +
-        '<span class="vs-sep">–</span>' +
-        '<input type="number" min="0" placeholder="0" data-i="' + i + '" data-f="scoreB" class="rr-score" value="' + m.scoreB + '">' +
-        '<select data-i="' + i + '" data-f="teamB" class="rr-select">' + teamOptionsForBracket(m.teamB, m.teamA) + '</select>' +
-        '<button class="row-remove" data-rr-remove="' + i + '" type="button">&times;</button>' +
-        '</div>';
-    }).join('');
-    matchSectionEl.innerHTML = rows + '<button class="btn btn-add" id="addMatchBtn" type="button">+ Add match</button>';
-
-    matchSectionEl.querySelectorAll('.rr-select').forEach(function (el) {
-      el.addEventListener('change', function () {
-        pendingDay.rrMatches[+el.dataset.i][el.dataset.f] = el.value;
-        renderMatchSection();
-        attachValidation();
-      });
-    });
-    matchSectionEl.querySelectorAll('.rr-score').forEach(function (el) {
-      var handler = function () {
-        pendingDay.rrMatches[+el.dataset.i][el.dataset.f] = el.value;
-        attachValidation();
-      };
-      el.addEventListener('input', handler);
-      el.addEventListener('change', handler);
-    });
-    matchSectionEl.querySelectorAll('[data-rr-remove]').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        pendingDay.rrMatches.splice(+btn.dataset.rrRemove, 1);
-        renderMatchSection();
-        attachValidation();
-      });
-    });
-    document.getElementById('addMatchBtn').addEventListener('click', function () {
-      pendingDay.rrMatches.push({ teamA: '', teamB: '', scoreA: '', scoreB: '' });
-      renderMatchSection();
-      attachValidation();
-    });
-  }
-
-  function renderBracketMatchSection() {
-    var bracket = pendingDay.bracket;
-    var sf1a = bracket.sf1.a, sf1b = bracket.sf1.b;
-    var remaining = pendingDay.teams.map(function (_, i) { return i; }).filter(function (i) { return String(i) !== String(sf1a) && String(i) !== String(sf1b); });
-    var sf1HasScore = bracket.sf1.scoreA !== undefined && bracket.sf1.scoreA !== '' && bracket.sf1.scoreB !== '' && bracket.sf1.scoreB !== undefined;
-    var sf2HasScore = bracket.sf2.scoreA !== undefined && bracket.sf2.scoreA !== '' && bracket.sf2.scoreB !== '' && bracket.sf2.scoreB !== undefined;
-
-    var html = '';
-    html += '<div class="bracket-match"><div class="stage-label">Semifinal 1</div><div class="vs-line">' +
-      '<select id="sf1a">' + teamOptionsForBracket(sf1a, sf1b) + '</select>' +
-      '<input type="number" id="sf1sa" min="0" placeholder="0" value="' + (bracket.sf1.scoreA || '') + '">' +
-      '<span class="vs-sep">–</span>' +
-      '<input type="number" id="sf1sb" min="0" placeholder="0" value="' + (bracket.sf1.scoreB || '') + '">' +
-      '</div><div class="vs-line" style="margin-top:6px;">' +
-      '<select id="sf1b">' + teamOptionsForBracket(sf1b, sf1a) + '</select><span></span><span></span><span></span></div></div>';
-
-    if (sf1a !== '' && sf1b !== '') {
-      var sf2a = remaining[0], sf2b = remaining[1];
-      html += '<div class="bracket-match"><div class="stage-label">Semifinal 2</div><div class="vs-line">' +
-        '<span class="side-name readonly">' + (sf2a !== undefined ? teamLabel(sf2a) : '—') + '</span>' +
-        '<input type="number" id="sf2sa" min="0" placeholder="0" value="' + (bracket.sf2.scoreA || '') + '">' +
-        '<span class="vs-sep">–</span>' +
-        '<input type="number" id="sf2sb" min="0" placeholder="0" value="' + (bracket.sf2.scoreB || '') + '">' +
-        '</div><div class="vs-line" style="margin-top:6px;">' +
-        '<span class="side-name readonly">' + (sf2b !== undefined ? teamLabel(sf2b) : '—') + '</span></div></div>';
-      bracket.sf2.a = sf2a; bracket.sf2.b = sf2b;
-    }
-
-    if (sf1HasScore && sf2HasScore && sf1a !== '' && sf1b !== '') {
-      var sf1Winner = (+bracket.sf1.scoreA > +bracket.sf1.scoreB) ? sf1a : sf1b;
-      var sf1Loser = (+bracket.sf1.scoreA > +bracket.sf1.scoreB) ? sf1b : sf1a;
-      var sf2Winner = (+bracket.sf2.scoreA > +bracket.sf2.scoreB) ? bracket.sf2.a : bracket.sf2.b;
-      var sf2Loser = (+bracket.sf2.scoreA > +bracket.sf2.scoreB) ? bracket.sf2.b : bracket.sf2.a;
-
-      html += '<div class="bracket-match derived"><div class="stage-label">Final (auto-filled from semifinal winners)</div><div class="vs-line">' +
-        '<span class="side-name readonly">' + teamLabel(sf1Winner) + '</span>' +
-        '<input type="number" id="finalsa" min="0" placeholder="0" value="' + (bracket.final && bracket.final.scoreA || '') + '">' +
-        '<span class="vs-sep">–</span>' +
-        '<input type="number" id="finalsb" min="0" placeholder="0" value="' + (bracket.final && bracket.final.scoreB || '') + '">' +
-        '</div><div class="vs-line" style="margin-top:6px;">' +
-        '<span class="side-name readonly">' + teamLabel(sf2Winner) + '</span></div></div>';
-
-      html += '<div class="bracket-match derived"><div class="stage-label">3rd-Place Match (auto-filled from semifinal losers)</div><div class="vs-line">' +
-        '<span class="side-name readonly">' + teamLabel(sf1Loser) + '</span>' +
-        '<input type="number" id="tpsa" min="0" placeholder="0" value="' + (bracket.thirdPlace && bracket.thirdPlace.scoreA || '') + '">' +
-        '<span class="vs-sep">–</span>' +
-        '<input type="number" id="tpsb" min="0" placeholder="0" value="' + (bracket.thirdPlace && bracket.thirdPlace.scoreB || '') + '">' +
-        '</div><div class="vs-line" style="margin-top:6px;">' +
-        '<span class="side-name readonly">' + teamLabel(sf2Loser) + '</span></div></div>';
-    }
-
-    matchSectionEl.innerHTML = html;
-
-    document.getElementById('sf1a').addEventListener('change', function (e) { bracket.sf1.a = e.target.value; bracket.final = undefined; bracket.thirdPlace = undefined; renderMatchSection(); attachValidation(); });
-    document.getElementById('sf1b').addEventListener('change', function (e) { bracket.sf1.b = e.target.value; bracket.final = undefined; bracket.thirdPlace = undefined; renderMatchSection(); attachValidation(); });
-    document.getElementById('sf1sa').addEventListener('input', function (e) { bracket.sf1.scoreA = e.target.value; attachValidation(); });
-    document.getElementById('sf1sa').addEventListener('change', function (e) { bracket.sf1.scoreA = e.target.value; bracket.final = undefined; bracket.thirdPlace = undefined; renderMatchSection(); attachValidation(); });
-    document.getElementById('sf1sb').addEventListener('input', function (e) { bracket.sf1.scoreB = e.target.value; attachValidation(); });
-    document.getElementById('sf1sb').addEventListener('change', function (e) { bracket.sf1.scoreB = e.target.value; bracket.final = undefined; bracket.thirdPlace = undefined; renderMatchSection(); attachValidation(); });
-    var sf2sa = document.getElementById('sf2sa'), sf2sb = document.getElementById('sf2sb');
-    if (sf2sa) sf2sa.addEventListener('input', function (e) { bracket.sf2.scoreA = e.target.value; attachValidation(); });
-    if (sf2sa) sf2sa.addEventListener('change', function (e) { bracket.sf2.scoreA = e.target.value; bracket.final = undefined; bracket.thirdPlace = undefined; renderMatchSection(); attachValidation(); });
-    if (sf2sb) sf2sb.addEventListener('input', function (e) { bracket.sf2.scoreB = e.target.value; attachValidation(); });
-    if (sf2sb) sf2sb.addEventListener('change', function (e) { bracket.sf2.scoreB = e.target.value; bracket.final = undefined; bracket.thirdPlace = undefined; renderMatchSection(); attachValidation(); });
-    var fsa = document.getElementById('finalsa'), fsb = document.getElementById('finalsb');
-    if (fsa) fsa.addEventListener('input', function (e) { bracket.final = bracket.final || {}; bracket.final.scoreA = e.target.value; attachValidation(); });
-    if (fsb) fsb.addEventListener('input', function (e) { bracket.final = bracket.final || {}; bracket.final.scoreB = e.target.value; attachValidation(); });
-    var tpa = document.getElementById('tpsa'), tpb = document.getElementById('tpsb');
-    if (tpa) tpa.addEventListener('input', function (e) { bracket.thirdPlace = bracket.thirdPlace || {}; bracket.thirdPlace.scoreA = e.target.value; attachValidation(); });
-    if (tpb) tpb.addEventListener('input', function (e) { bracket.thirdPlace = bracket.thirdPlace || {}; bracket.thirdPlace.scoreB = e.target.value; attachValidation(); });
-  }
-
-  function renderTeamRows() {
-    var chosen = {};
-    pendingDay.teams.forEach(function (t) { [t.a, t.b].forEach(function (n) { if (n) chosen[n] = (chosen[n] || 0) + 1; }); });
-
-    teamRowsEl.innerHTML = pendingDay.teams.map(function (t, i) {
-      var isDup = (t.a && chosen[t.a] > 1) || (t.b && chosen[t.b] > 1);
-      return '<div class="team-edit-row' + (isDup ? ' dup' : '') + '">' +
-        '<span class="team-edit-num">' + (i + 1) + '</span>' +
-        '<select data-i="' + i + '" data-slot="a" class="team-select">' + playerOptions(t.a) + '</select>' +
-        '<select data-i="' + i + '" data-slot="b" class="team-select">' + playerOptions(t.b) + '</select>' +
-        '<button class="row-remove" data-remove="' + i + '" type="button" ' + (pendingDay.teams.length <= 3 ? 'disabled' : '') + '>&times;</button>' +
-        '</div>';
-    }).join('');
-
-    teamRowsEl.querySelectorAll('.team-select').forEach(function (sel) {
-      sel.addEventListener('change', function () {
-        var i = +sel.dataset.i, slot = sel.dataset.slot;
-        pendingDay.teams[i][slot] = sel.value;
-        pendingDay.bracket = { sf1: { a: '', b: '' }, sf2: { a: '', b: '' } };
-        pendingDay.rrMatches = [{ teamA: '', teamB: '', scoreA: '', scoreB: '' }];
-        renderAddMatchDayForm();
-      });
-    });
-    teamRowsEl.querySelectorAll('[data-remove]').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        if (pendingDay.teams.length <= 3) return;
-        pendingDay.teams.splice(+btn.dataset.remove, 1);
-        pendingDay.bracket = { sf1: { a: '', b: '' }, sf2: { a: '', b: '' } };
-        pendingDay.rrMatches = [{ teamA: '', teamB: '', scoreA: '', scoreB: '' }];
-        renderAddMatchDayForm();
-      });
-    });
-  }
-
-  document.getElementById('addTeamBtn').addEventListener('click', function () {
-    pendingDay.teams.push({ a: '', b: '' });
-    pendingDay.bracket = { sf1: { a: '', b: '' }, sf2: { a: '', b: '' } };
-    pendingDay.rrMatches = [{ teamA: '', teamB: '', scoreA: '', scoreB: '' }];
-    renderAddMatchDayForm();
-  });
-
-  function renderAddMatchDayForm() {
-    renderTeamRows();
-    renderMatchSection();
-    attachValidation();
-  }
-
-  function attachValidation() {
-    var teamsComplete = pendingDay.teams.every(function (t) { return t.a && t.b; });
-    var chosen = {};
-    pendingDay.teams.forEach(function (t) { [t.a, t.b].forEach(function (n) { if (n) chosen[n] = (chosen[n] || 0) + 1; }); });
-    var hasDup = Object.keys(chosen).some(function (k) { return chosen[k] > 1; });
-
-    var msg = '';
-    var ok = true;
-
-    if (!teamsComplete) { msg = 'Finish selecting both players for every team.'; ok = false; }
-    else if (hasDup) { msg = 'A player is on more than one team — fix before saving.'; ok = false; }
-    else if (pendingDay.teams.length === 4) {
-      var b = pendingDay.bracket;
-      var hasFinal = b.final && b.final.scoreA !== '' && b.final.scoreA !== undefined && b.final.scoreB !== '' && b.final.scoreB !== undefined;
-      var hasThird = b.thirdPlace && b.thirdPlace.scoreA !== '' && b.thirdPlace.scoreA !== undefined && b.thirdPlace.scoreB !== '' && b.thirdPlace.scoreB !== undefined;
-      if (!hasFinal || !hasThird) { msg = 'Enter Semifinal, Final, and 3rd-Place scores to complete the bracket.'; ok = false; }
-    } else {
-      var validMatches = pendingDay.rrMatches.filter(function (m) { return m.teamA !== '' && m.teamB !== '' && m.scoreA !== '' && m.scoreB !== ''; });
-      if (validMatches.length === 0) { msg = 'Add at least one match with both teams and a score.'; ok = false; }
-    }
-
-    validationMsg.textContent = ok ? '' : msg;
-    saveBtn.disabled = !ok;
-  }
-
-  function buildDayTeamsArray() {
-    return pendingDay.teams.map(function (t) { return [t.a, t.b]; });
-  }
-
-  function saveMatchDay(matches) {
-    var date = document.getElementById('dayDate').value;
-    TOURNAMENT_DATA.matchDays.push({
-      date: date,
-      teams: buildDayTeamsArray(),
-      matches: matches
-    });
-    persistToLocalStorage();
-    renderApp();
-    document.getElementById('saveConfirm').classList.add('show');
-  }
-
-  saveBtn.addEventListener('click', function () {
-    if (pendingDay.teams.length === 4) {
-      saveMatchDay(buildBracketMatches());
-    } else {
-      var matches = pendingDay.rrMatches
-        .filter(function (m) { return m.teamA !== '' && m.teamB !== '' && m.scoreA !== '' && m.scoreB !== ''; })
-        .map(function (m) { return { teamA: +m.teamA, teamB: +m.teamB, scoreA: +m.scoreA, scoreB: +m.scoreB }; });
-      saveMatchDay(matches);
-    }
-  });
-
-  function buildBracketMatches() {
-    var b = pendingDay.bracket;
-    return [
-      { teamA: +b.sf1.a, teamB: +b.sf1.b, scoreA: +b.sf1.scoreA, scoreB: +b.sf1.scoreB, stage: 'semifinal1' },
-      { teamA: +b.sf2.a, teamB: +b.sf2.b, scoreA: +b.sf2.scoreA, scoreB: +b.sf2.scoreB, stage: 'semifinal2' },
-      { teamA: (+b.sf1.scoreA > +b.sf1.scoreB ? +b.sf1.a : +b.sf1.b), teamB: (+b.sf2.scoreA > +b.sf2.scoreB ? +b.sf2.a : +b.sf2.b), scoreA: +b.final.scoreA, scoreB: +b.final.scoreB, stage: 'final' },
-      { teamA: (+b.sf1.scoreA > +b.sf1.scoreB ? +b.sf1.b : +b.sf1.a), teamB: (+b.sf2.scoreA > +b.sf2.scoreB ? +b.sf2.b : +b.sf2.a), scoreA: +b.thirdPlace.scoreA, scoreB: +b.thirdPlace.scoreB, stage: 'thirdPlace' }
-    ];
-  }
-
   function openModal() {
     backdrop.classList.add('open');
-    document.getElementById('saveConfirm').classList.remove('show');
-    resetPendingDay();
     renderRoster();
-    renderAddMatchDayForm();
   }
   function closeModal() { backdrop.classList.remove('open'); }
 
@@ -2271,19 +1970,22 @@
   document.getElementById('cancelBtn').addEventListener('click', closeModal);
   backdrop.addEventListener('click', function (e) { if (e.target === backdrop) closeModal(); });
 
-  document.querySelectorAll('.modal-subtab').forEach(function (btn) {
-    btn.addEventListener('click', function () {
-      document.querySelectorAll('.modal-subtab').forEach(function (b) { b.classList.remove('active'); });
-      document.querySelectorAll('.modal-subpanel').forEach(function (p) { p.classList.remove('active'); });
-      btn.classList.add('active');
-      document.getElementById('subpanel-' + btn.dataset.subtab).classList.add('active');
-      if (btn.dataset.subtab === 'past') renderPastDaysList();
-    });
-  });
+  document.getElementById('exportBtn').addEventListener('click', function () {
+    var dataStr = JSON.stringify(TOURNAMENT_DATA, null, 2);
+    var htmlContent = document.documentElement.outerHTML;
+    var scriptTag = '<' + 'script id="tournament-data" type="application/json">';
+    var idx = htmlContent.indexOf(scriptTag);
+    if (idx === -1) return;
+    var endIdx = htmlContent.indexOf('<' + '/script>', idx);
+    var newHtml = htmlContent.slice(0, idx + scriptTag.length) + '\n' + dataStr + '\n' + htmlContent.slice(endIdx);
 
-  function renderPastDaysList() {
-    document.getElementById('pastDaysList').innerHTML = '<p style="color:var(--ink-soft);font-size:13px;">Wired in Task 19.</p>';
-  }
+    var blob = new Blob([newHtml], { type: 'text/html' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'badminton-dash.html';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
 
   function renderRoster() {
     document.getElementById('rosterChips').innerHTML = TOURNAMENT_DATA.players.map(function (name) {
@@ -2314,6 +2016,7 @@
     renderRoster();
     renderApp();
   }
+
 </script>
 </body>
 </html>
