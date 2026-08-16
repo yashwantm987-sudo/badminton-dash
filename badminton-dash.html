@@ -154,64 +154,6 @@
   .panel { display: none; }
   .panel.active { display: block; }
 
-  /* ---------- match day cards ---------- */
-  .day-card {
-    background: var(--card);
-    border-radius: 10px;
-    padding: 16px 16px 8px;
-    margin-bottom: 14px;
-    box-shadow: 0 1px 2px rgba(22, 31, 56, 0.06);
-  }
-  .day-card-head {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    margin-bottom: 10px;
-  }
-  .day-card-head .date {
-    font-family: var(--font-display);
-    font-weight: 700;
-    font-size: 16px;
-    letter-spacing: 0.01em;
-    color: var(--ink);
-  }
-  .day-card-head .meta {
-    font-size: 11.5px;
-    color: var(--ink-soft);
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-  }
-  .team-row {
-    display: grid;
-    grid-template-columns: 34px 1fr auto auto auto;
-    align-items: center;
-    gap: 10px;
-    padding: 9px 4px;
-    border-top: 1px solid rgba(27, 35, 51, 0.07);
-  }
-  .team-row:first-of-type { border-top: none; }
-  .rank-badge {
-    width: 26px; height: 26px;
-    display: flex; align-items: center; justify-content: center;
-    font-family: var(--font-display);
-    font-weight: 800;
-    font-size: 13px;
-    border-radius: 50%;
-    background: var(--paper);
-    color: var(--ink-soft);
-  }
-  .rank-badge.gold { background: var(--amber); color: #4a3007; }
-  .rank-tie-tag { font-size: 8.5px; font-weight: 700; vertical-align: super; }
-  .team-players { font-size: 14.5px; font-weight: 600; color: var(--ink); }
-  .team-players .amp { color: var(--ink-soft); font-weight: 500; margin: 0 2px; }
-  .team-record {
-    font-family: var(--font-display);
-    font-size: 12.5px;
-    font-variant-numeric: tabular-nums;
-    color: var(--ink-soft);
-    text-align: right;
-    min-width: 66px;
-  }
   .team-diff {
     font-family: var(--font-display);
     font-size: 12.5px;
@@ -221,29 +163,6 @@
   }
   .team-diff.pos { color: var(--teal); }
   .team-diff.neg { color: var(--coral); }
-  .team-pts {
-    font-family: var(--font-display);
-    font-weight: 800;
-    font-size: 13.5px;
-    text-align: right;
-    min-width: 58px;
-    color: var(--ink);
-  }
-  .shuttle { width: 13px; height: 13px; vertical-align: -2px; margin-right: 3px; }
-
-  .col-headers {
-    display: grid;
-    grid-template-columns: 34px 1fr auto auto auto;
-    gap: 10px;
-    padding: 0 4px 6px;
-    font-size: 9.5px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--ink-soft);
-  }
-  .col-headers span:nth-child(3) { text-align: right; min-width: 66px; }
-  .col-headers span:nth-child(4) { text-align: right; min-width: 40px; }
-  .col-headers span:nth-child(5) { text-align: right; min-width: 58px; }
 
   /* ---------- player stats table ---------- */
   .stats-table {
@@ -293,77 +212,7 @@
   .partner-card.top .winrate { color: var(--teal); }
   .partner-card.most-played { grid-column: 1 / -1; }
 
-  /* ---------- match stat tiles ---------- */
-  .tile-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-  .tile { background: var(--card); border-radius: 10px; padding: 14px; box-shadow: 0 1px 2px rgba(22, 31, 56, 0.06); }
-  .tile .label { font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 6px; }
-  .tile .value { font-family: var(--font-display); font-weight: 800; font-size: 20px; line-height: 1.15; color: var(--ink); }
-  .tile .detail { font-size: 11px; color: var(--ink-soft); margin-top: 4px; }
-
-  /* ---------- individual match log ---------- */
-  .match-log {
-    background: var(--card);
-    border-radius: 10px;
-    padding: 4px 16px 10px;
-    margin-top: 14px;
-    box-shadow: 0 1px 2px rgba(22, 31, 56, 0.06);
-  }
-  .match-log-head {
-    font-family: var(--font-display);
-    font-weight: 700;
-    font-size: 13px;
-    color: var(--ink);
-    padding: 14px 4px 2px;
-    letter-spacing: 0.01em;
-  }
-  .match-day-label {
-    font-size: 10px;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--ink-soft);
-    padding: 12px 4px 2px;
-  }
-  .match-row {
-    display: grid;
-    grid-template-columns: 1fr 66px 44px;
-    align-items: center;
-    gap: 10px;
-    padding: 7px 4px;
-    border-top: 1px solid rgba(27, 35, 51, 0.06);
-  }
-  .match-day-group:first-of-type .match-row:first-of-type { border-top: none; }
-  .match-teams { font-size: 13px; }
-  .match-teams .win { color: var(--ink); font-weight: 700; }
-  .match-teams .lose { color: var(--ink-soft); font-weight: 500; }
-  .match-teams .vs { color: var(--ink-soft); font-weight: 400; margin: 0 5px; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.04em; }
-  .match-score {
-    font-family: var(--font-display);
-    font-weight: 700;
-    font-size: 13px;
-    text-align: right;
-    font-variant-numeric: tabular-nums;
-    color: var(--ink);
-  }
-  .match-margin {
-    font-family: var(--font-display);
-    font-size: 11.5px;
-    text-align: right;
-    font-variant-numeric: tabular-nums;
-    color: var(--ink-soft);
-  }
-  .match-margin.closest { color: var(--teal); }
-  .match-margin.lopsided { color: var(--coral); }
-
-  @media (max-width: 480px) {
-    .match-row { grid-template-columns: 1fr 58px; }
-    .match-margin { display: none; }
-  }
-
   @media (max-width: 620px) {
-    .team-row { grid-template-columns: 28px 1fr auto; row-gap: 4px; }
-    .team-row .team-record, .team-row .team-diff { display: none; }
-    .col-headers { display: none; }
-    .tile-row { grid-template-columns: 1fr 1fr; }
     .partner-grid { grid-template-columns: 1fr; }
     table { min-width: 520px; }
 
@@ -377,12 +226,10 @@
     .modal-backdrop { padding: 0; }
     .modal { max-width: none; border-radius: 0; min-height: 100vh; }
     .team-edit-row { grid-template-columns: 18px 1fr 1fr 26px; gap: 6px; }
-    .vs-line, .rr-match-row { font-size: 12.5px; }
   }
 
   @media (max-width: 420px) {
     .lb-chip { min-width: 96px; }
-    .rr-match-row { grid-template-columns: 1fr 40px 12px 40px 1fr 22px; }
   }
 
   /* ---------- edit mode: add match day modal ---------- */
@@ -475,9 +322,6 @@
   }
   select:focus, input:focus { outline: 2px solid var(--amber); outline-offset: 1px; }
 
-  .date-row { margin-bottom: 18px; }
-  .date-row input[type="date"] { width: 190px; }
-
   .team-edit-row {
     display: grid;
     grid-template-columns: 22px 1fr 1fr 30px;
@@ -560,46 +404,6 @@
   }
   .roster-msg.ok { color: var(--teal); }
 
-  .bracket-match {
-    background: var(--card);
-    border-radius: 8px;
-    padding: 12px 14px;
-    margin-bottom: 8px;
-  }
-  .bracket-match .stage-label {
-    font-size: 10px;
-    font-weight: 700;
-    letter-spacing: 0.07em;
-    text-transform: uppercase;
-    color: var(--amber-deep);
-    margin-bottom: 8px;
-  }
-  .bracket-match.derived .stage-label { color: var(--periwinkle-dim); }
-  .vs-line {
-    display: grid;
-    grid-template-columns: 1fr 50px 14px 50px;
-    align-items: center;
-    gap: 8px;
-  }
-  .vs-line .side-name { font-size: 13.5px; font-weight: 600; }
-  .vs-line .side-name.readonly { color: var(--ink-soft); font-style: italic; }
-  .vs-line input[type="number"] { width: 100%; text-align: center; }
-  .vs-line .vs-sep { text-align: center; color: var(--ink-soft); font-size: 11px; }
-
-  .rr-match-row {
-    display: grid;
-    grid-template-columns: 1fr 44px 14px 44px 1fr 26px;
-    align-items: center;
-    gap: 8px;
-    background: var(--card);
-    border-radius: 8px;
-    padding: 9px 12px;
-    margin-bottom: 8px;
-  }
-  .rr-match-row select { width: 100%; }
-  .rr-match-row input[type="number"] { width: 100%; text-align: center; }
-  .rr-match-row .vs-sep { text-align: center; color: var(--ink-soft); font-size: 11px; }
-
   .validation-msg {
     font-size: 12px;
     color: var(--coral);
@@ -626,12 +430,6 @@
     gap: 10px;
     border-top: 1px solid rgba(27, 35, 51, 0.08);
   }
-
-  .modal-subnav { display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 1px solid rgba(27, 35, 51, 0.1); }
-  .modal-subtab { appearance: none; background: none; border: none; color: var(--ink-soft); font-family: var(--font-body); font-size: 12.5px; font-weight: 600; padding: 8px 12px 7px; cursor: pointer; border-bottom: 2px solid transparent; }
-  .modal-subtab.active { color: var(--amber-deep); border-bottom-color: var(--amber); }
-  .modal-subpanel { display: none; }
-  .modal-subpanel.active { display: block; }
 
   .sub-tabs { display: flex; gap: 4px; margin-bottom: 14px; }
   .sub-tab {
@@ -890,184 +688,6 @@
     if (rank === 3) return 1;
     return 0;
   }
-
-  function deriveDayResult(day) {
-    var tally = day.teams.map(function () { return { wins: 0, diff: 0 }; });
-
-    day.matches.forEach(function (m) {
-      tally[m.teamA].diff += m.scoreA - m.scoreB;
-      tally[m.teamB].diff += m.scoreB - m.scoreA;
-      if (m.scoreA > m.scoreB) tally[m.teamA].wins++; else tally[m.teamB].wins++;
-    });
-
-    var rankings = tally.map(function (t, i) {
-      return { teamIndex: i, wins: t.wins, diff: t.diff, rank: null, tied: false };
-    });
-
-    var finalMatch = day.matches.find(function (m) { return m.stage === 'final'; });
-
-    if (finalMatch) {
-      var thirdMatch = day.matches.find(function (m) { return m.stage === 'thirdPlace'; });
-      var finalWinner = finalMatch.scoreA > finalMatch.scoreB ? finalMatch.teamA : finalMatch.teamB;
-      var finalLoser = finalMatch.scoreA > finalMatch.scoreB ? finalMatch.teamB : finalMatch.teamA;
-      rankings[finalWinner].rank = 1;
-      rankings[finalLoser].rank = 2;
-
-      var pending = !thirdMatch;
-      if (thirdMatch) {
-        var thirdWinner = thirdMatch.scoreA > thirdMatch.scoreB ? thirdMatch.teamA : thirdMatch.teamB;
-        var thirdLoser = thirdMatch.scoreA > thirdMatch.scoreB ? thirdMatch.teamB : thirdMatch.teamA;
-        rankings[thirdWinner].rank = 3;
-        rankings[thirdLoser].rank = 4;
-      }
-      return { rankings: rankings, unresolved: false, pending: pending };
-    }
-
-    var order = rankings.slice().sort(function (a, b) {
-      if (b.wins !== a.wins) return b.wins - a.wins;
-      return b.diff - a.diff;
-    });
-
-    var place = 1;
-    order.forEach(function (r, i) {
-      if (i > 0) {
-        var prev = order[i - 1];
-        var sameAsPrev = r.wins === prev.wins && r.diff === prev.diff;
-        if (!sameAsPrev) place = i + 1;
-      }
-      r.rank = place;
-    });
-
-    var rankCounts = {};
-    order.forEach(function (r) { rankCounts[r.rank] = (rankCounts[r.rank] || 0) + 1; });
-    order.forEach(function (r) { r.tied = rankCounts[r.rank] > 1; });
-
-    var allTied = order.every(function (r) { return r.wins === order[0].wins && r.diff === order[0].diff; });
-
-    return { rankings: rankings, unresolved: allTied, pending: false };
-  }
-
-  function computePlayerStats(players, matchDays) {
-    var sortedDays = matchDays.slice().sort(function (a, b) {
-      return a.date < b.date ? -1 : a.date > b.date ? 1 : 0;
-    });
-
-    return players.map(function (name) {
-      var matchesPlayed = 0, points = 0, championships = 0;
-      var playedWins = [];
-
-      sortedDays.forEach(function (day) {
-        var teamIndex = day.teams.findIndex(function (team) { return team.indexOf(name) !== -1; });
-        if (teamIndex === -1) return;
-
-        matchesPlayed++;
-        var result = deriveDayResult(day);
-        var entry = result.rankings[teamIndex];
-        var awardedRank = result.unresolved ? null : entry.rank;
-        points += pointsForRank(awardedRank);
-        var isWin = !result.unresolved && entry.rank === 1;
-        if (isWin) championships++;
-        playedWins.push(isWin);
-      });
-
-      var currentStreak = 0;
-      for (var i = playedWins.length - 1; i >= 0; i--) {
-        if (playedWins[i]) currentStreak++; else break;
-      }
-
-      var longestStreak = 0, run = 0;
-      playedWins.forEach(function (isWin) {
-        run = isWin ? run + 1 : 0;
-        if (run > longestStreak) longestStreak = run;
-      });
-
-      return {
-        name: name,
-        points: points,
-        matchesPlayed: matchesPlayed,
-        championships: championships,
-        winPct: matchesPlayed > 0 ? championships / matchesPlayed : 0,
-        currentStreak: currentStreak,
-        longestStreak: longestStreak
-      };
-    });
-  }
-
-  function computeLeaderboard(playerStats) {
-    var sorted = playerStats.slice().sort(function (a, b) { return b.points - a.points; });
-
-    var places = sorted.map(function (p, i) {
-      if (i === 0) return 1;
-      return sorted[i - 1].points === p.points ? null : i + 1;
-    });
-    for (var i = 1; i < places.length; i++) {
-      if (places[i] === null) places[i] = places[i - 1];
-    }
-
-    var counts = {};
-    places.forEach(function (pl) { counts[pl] = (counts[pl] || 0) + 1; });
-
-    return sorted.map(function (p, i) {
-      return { name: p.name, points: p.points, place: places[i], tied: counts[places[i]] > 1 };
-    });
-  }
-
-  function computePartnershipStats(matchDays) {
-    var map = {};
-    matchDays.forEach(function (day) {
-      var result = deriveDayResult(day);
-      day.teams.forEach(function (team, teamIndex) {
-        var pair = team.slice().sort();
-        var key = pair.join('|');
-        if (!map[key]) map[key] = { players: pair, timesPlayed: 0, wins: 0 };
-        map[key].timesPlayed++;
-        var entry = result.rankings[teamIndex];
-        if (!result.unresolved && entry.rank === 1) map[key].wins++;
-      });
-    });
-
-    return Object.keys(map).map(function (key) {
-      var p = map[key];
-      return { players: p.players, timesPlayed: p.timesPlayed, wins: p.wins, winPct: p.wins / p.timesPlayed };
-    }).sort(function (a, b) {
-      if (b.winPct !== a.winPct) return b.winPct - a.winPct;
-      return b.timesPlayed - a.timesPlayed;
-    });
-  }
-
-  function computeMatchStats(matchDays) {
-    var flat = [];
-    matchDays.forEach(function (day) {
-      day.matches.forEach(function (m) {
-        flat.push({
-          date: day.date,
-          teamA: day.teams[m.teamA],
-          teamB: day.teams[m.teamB],
-          scoreA: m.scoreA,
-          scoreB: m.scoreB,
-          margin: Math.abs(m.scoreA - m.scoreB)
-        });
-      });
-    });
-
-    if (flat.length === 0) {
-      return { totalMatches: 0, closest: null, mostLopsided: null, avgMargin: 0 };
-    }
-
-    var closest = flat[0], mostLopsided = flat[0], sum = 0;
-    flat.forEach(function (m) {
-      if (m.margin < closest.margin) closest = m;
-      if (m.margin > mostLopsided.margin) mostLopsided = m;
-      sum += m.margin;
-    });
-
-    return {
-      totalMatches: flat.length,
-      closest: closest,
-      mostLopsided: mostLopsided,
-      avgMargin: Math.round((sum / flat.length) * 10) / 10
-    };
-  }
   // ---- end dev/scoring.js content ----
 </script>
 <script>
@@ -1099,77 +719,6 @@
     }).join('');
   }
 
-  function renderDayCard(day) {
-    var result = deriveDayResult(day);
-    var rows = result.rankings.slice().sort(function (a, b) {
-      if (a.rank === null && b.rank === null) return 0;
-      if (a.rank === null) return 1;
-      if (b.rank === null) return -1;
-      return a.rank - b.rank;
-    });
-
-    var teamRowsHtml = rows.map(function (r) {
-      var team = day.teams[r.teamIndex];
-      var teamMatches = day.matches.filter(function (m) { return m.teamA === r.teamIndex || m.teamB === r.teamIndex; }).length;
-      var losses = teamMatches - r.wins;
-      var rankLabel = r.rank === null ? '?' : String(r.rank);
-      var goldClass = r.rank === 1 ? ' gold' : '';
-      var tieTag = r.tied ? '<span class="rank-tie-tag">T</span>' : '';
-      var shuttle = r.rank === 1 ? '<svg class="shuttle" viewBox="0 0 24 24" fill="#F2A93C"><path d="M12 2 L14 9 L21 10.5 L15.5 15 L17 22 L12 18.5 L7 22 L8.5 15 L3 10.5 L10 9 Z"/></svg>' : '';
-      var diffClass = r.diff > 0 ? 'pos' : (r.diff < 0 ? 'neg' : '');
-      var diffLabel = (r.diff > 0 ? '+' : '') + r.diff;
-      var pts = pointsForRank(result.unresolved ? null : r.rank);
-      var ptsLabel = (pts > 0 ? '+' : '') + pts + ' each';
-
-      return '<div class="team-row">' +
-        '<span class="rank-badge' + goldClass + '">' + rankLabel + tieTag + '</span>' +
-        '<span class="team-players">' + shuttle + escapeHtml(team[0]) + '<span class="amp">&amp;</span>' + escapeHtml(team[1]) + '</span>' +
-        '<span class="team-record">' + r.wins + '–' + losses + '</span>' +
-        '<span class="team-diff ' + diffClass + '">' + diffLabel + '</span>' +
-        '<span class="team-pts">' + ptsLabel + '</span></div>';
-    }).join('');
-
-    var meta = day.teams.length + ' teams · ' + day.matches.length + ' matches';
-    var pendingNote = result.pending ? '<p style="color:var(--coral);font-size:11.5px;margin:6px 4px 0;">3rd-place match not yet recorded — rank pending.</p>' : '';
-    var unresolvedNote = result.unresolved ? '<p style="color:var(--coral);font-size:11.5px;margin:6px 4px 0;">Unresolved day — no points awarded.</p>' : '';
-
-    return '<div class="day-card"><div class="day-card-head"><span class="date">' + formatDayHeading(day.date) + '</span>' +
-      '<span class="meta">' + meta + '</span></div>' +
-      '<div class="col-headers"><span>Rk</span><span>Team</span><span>Record</span><span>Diff</span><span>Pts</span></div>' +
-      teamRowsHtml + pendingNote + unresolvedNote + '</div>';
-  }
-
-  function renderMatchHistory(matchDays) {
-    if (matchDays.length === 0) {
-      return '<p style="color:var(--ink-soft);font-size:13px;">No match days recorded yet.</p>';
-    }
-    var sorted = matchDays.slice().sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : 0; });
-    return sorted.map(renderDayCard).join('');
-  }
-
-  function renderPlayerStatsTable(playerStats) {
-    var order = computeLeaderboard(playerStats);
-    var byName = {};
-    playerStats.forEach(function (p) { byName[p.name] = p; });
-
-    var rows = order.map(function (o) {
-      var p = byName[o.name];
-      var winPctLabel = Math.round(p.winPct * 100) + '%';
-      var streakClass = p.currentStreak > 0 ? ' flame' : '';
-      return '<tr><td class="name">' + escapeHtml(p.name) + '</td>' +
-        '<td class="num pts">' + p.points + '</td>' +
-        '<td class="num">' + p.matchesPlayed + '</td>' +
-        '<td class="num">' + winPctLabel + '</td>' +
-        '<td class="num' + (p.championships > 0 ? ' trophy-count' : '') + '">' + p.championships + '</td>' +
-        '<td class="num' + streakClass + '">' + p.currentStreak + '</td>' +
-        '<td class="num">' + p.longestStreak + '</td></tr>';
-    }).join('');
-
-    return '<table><thead><tr><th>Player</th><th class="num">Pts</th><th class="num">Played</th>' +
-      '<th class="num">Win %</th><th class="num">🏆</th><th class="num">Streak</th><th class="num">Best</th></tr></thead>' +
-      '<tbody>' + rows + '</tbody></table>';
-  }
-
   function renderPartnerships(partnershipStats) {
     if (partnershipStats.length === 0) {
       return '<p style="color:var(--ink-soft);font-size:13px;">No partnerships recorded yet.</p>';
@@ -1188,61 +737,6 @@
       '<div class="winrate">' + Math.round(mostPlayed.winPct * 100) + '%</div></div>';
 
     return '<div class="partner-grid">' + topHtml + mostPlayedHtml + '</div>';
-  }
-
-  function renderStatTile(label, match) {
-    if (!match) return '<div class="tile"><div class="label">' + label + '</div><div class="value">—</div></div>';
-    var winner = match.scoreA > match.scoreB ? match.teamA : match.teamB;
-    var loser = match.scoreA > match.scoreB ? match.teamB : match.teamA;
-    return '<div class="tile"><div class="label">' + label + '</div>' +
-      '<div class="value">' + Math.max(match.scoreA, match.scoreB) + '–' + Math.min(match.scoreA, match.scoreB) + '</div>' +
-      '<div class="detail">' + escapeHtml(winner[0]) + ' &amp; ' + escapeHtml(winner[1]) + ' vs. ' + escapeHtml(loser[0]) + ' &amp; ' + escapeHtml(loser[1]) + '</div></div>';
-  }
-
-  function sameTeams(a, b) {
-    return a[0] === b[0] && a[1] === b[1];
-  }
-
-  function renderMatchLog(matchDays, matchStats) {
-    var sorted = matchDays.slice().sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : 0; });
-    var groups = sorted.map(function (day) {
-      var rowsHtml = day.matches.map(function (m) {
-        var teamA = day.teams[m.teamA], teamB = day.teams[m.teamB];
-        var aWon = m.scoreA > m.scoreB;
-        var winner = aWon ? teamA : teamB, loser = aWon ? teamB : teamA;
-        var winScore = Math.max(m.scoreA, m.scoreB), loseScore = Math.min(m.scoreA, m.scoreB);
-        var margin = winScore - loseScore;
-        var tag;
-        if (matchStats.closest && matchStats.closest.date === day.date && matchStats.closest.margin === margin &&
-            sameTeams(matchStats.closest.teamA, teamA) && sameTeams(matchStats.closest.teamB, teamB)) {
-          tag = '<span class="match-margin closest">+' + margin + ' · closest</span>';
-        } else if (matchStats.mostLopsided && matchStats.mostLopsided.date === day.date && matchStats.mostLopsided.margin === margin &&
-            sameTeams(matchStats.mostLopsided.teamA, teamA) && sameTeams(matchStats.mostLopsided.teamB, teamB)) {
-          tag = '<span class="match-margin lopsided">+' + margin + ' · most lopsided</span>';
-        } else {
-          tag = '<span class="match-margin">+' + margin + '</span>';
-        }
-
-        return '<div class="match-row"><span class="match-teams"><span class="win">' + escapeHtml(winner[0]) + ' &amp; ' + escapeHtml(winner[1]) +
-          '</span><span class="vs">def.</span><span class="lose">' + escapeHtml(loser[0]) + ' &amp; ' + escapeHtml(loser[1]) + '</span></span>' +
-          '<span class="match-score">' + winScore + '–' + loseScore + '</span>' + tag + '</div>';
-      }).join('');
-
-      return '<div class="match-day-group"><div class="match-day-label">' + formatDayHeading(day.date) + '</div>' + rowsHtml + '</div>';
-    }).join('');
-
-    return '<div class="match-log"><div class="match-log-head">All Matches (' + matchStats.totalMatches + ')</div>' + groups + '</div>';
-  }
-
-  function renderMatchStats(matchStats, matchDays) {
-    var tiles = '<div class="tile-row">' +
-      '<div class="tile"><div class="label">Matches logged</div><div class="value">' + matchStats.totalMatches + '</div></div>' +
-      renderStatTile('Closest match', matchStats.closest) +
-      renderStatTile('Most lopsided', matchStats.mostLopsided) +
-      '<div class="tile"><div class="label">Avg. margin</div><div class="value">' + matchStats.avgMargin + ' pts</div></div>' +
-      '</div>';
-
-    return tiles + renderMatchLog(matchDays, matchStats);
   }
   // ---- end dev/render.js content ----
 
