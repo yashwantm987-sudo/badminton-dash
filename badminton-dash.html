@@ -730,14 +730,17 @@
 
   var LOCAL_STORAGE_KEY = 'badminton-dash-data';
   var SYNC_STORAGE_KEY = 'badminton-dash-sync';
+  var DEFAULT_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyC7TfCL3aA6m1kBmNS2E6cTBDSAeVc4hh5OdehWgRs_vv04oH6XBgc21p8GEXooLx4/exec';
 
   function getSyncConfig() {
     try {
       var config = localStorage.getItem(SYNC_STORAGE_KEY);
-      return config ? JSON.parse(config) : null;
-    } catch (e) {
-      return null;
-    }
+      if (config) {
+        var parsed = JSON.parse(config);
+        if (parsed && parsed.scriptUrl) return parsed;
+      }
+    } catch (e) {}
+    return { scriptUrl: DEFAULT_SCRIPT_URL, pendingSync: false };
   }
 
   function saveSyncConfig(config) {
