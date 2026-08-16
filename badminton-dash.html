@@ -361,7 +361,7 @@
 
   @media (max-width: 620px) {
     .team-row { grid-template-columns: 28px 1fr auto; row-gap: 4px; }
-    .team-record, .team-diff { display: none; }
+    .team-row .team-record, .team-row .team-diff { display: none; }
     .col-headers { display: none; }
     .tile-row { grid-template-columns: 1fr 1fr; }
     .partner-grid { grid-template-columns: 1fr; }
@@ -1280,6 +1280,262 @@
   function setHtmlIfPresent(id, html) {
     var el = document.getElementById(id);
     if (el) el.innerHTML = html;
+  }
+
+  // ---- Tournament tab: single tournament view (fixtures, standings, knockout) ----
+
+  var activeFixtureId = null;
+
+  function computeTournamentStandings(tournament) {
+    var standings = tournament.teams.map(function (team, i) {
+      return { teamIndex: i, played: 0, wins: 0, losses: 0, diff: 0, pts: 0 };
+    });
+
+    tournament.fixtures.forEach(function (f) {
+      if (f.status !== 'completed') return;
+      standings[f.teamA].played++;
+      standings[f.teamB].played++;
+      standings[f.teamA].diff += f.scoreA - f.scoreB;
+      standings[f.teamB].diff += f.scoreB - f.scoreA;
+      if (f.scoreA > f.scoreB) {
+        standings[f.teamA].wins++;
+        standings[f.teamA].pts += 3;
+        standings[f.teamB].losses++;
+      } else {
+        standings[f.teamB].wins++;
+        standings[f.teamB].pts += 3;
+        standings[f.teamA].losses++;
+      }
+    });
+
+    standings.sort(function (a, b) {
+      if (b.pts !== a.pts) return b.pts - a.pts;
+      return b.diff - a.diff;
+    });
+
+    standings.forEach(function (s, i) {
+      s.rank = i + 1;
+      if (i > 0 && standings[i - 1].pts === s.pts && standings[i - 1].diff === s.diff) {
+        s.rank = standings[i - 1].rank;
+      }
+    });
+
+    return standings;
+  }
+
+  function renderSingleTournament(t) {
+    var label = t.name || formatDayHeading(t.date);
+    var subTabs = '<div class="sub-tabs">' +
+      '<button class="sub-tab' + (currentView.subView === 'fixtures' ? ' active' : '') + '" data-sv="fixtures">Fixtures</button>' +
+      '<button class="sub-tab' + (currentView.subView === 'standings' ? ' active' : '') + '" data-sv="standings">Standings</button>' +
+      '<button class="sub-tab' + (currentView.subView === 'knockout' ? ' active' : '') + '" data-sv="knockout">Knockout</button></div>';
+
+    var content = '';
+    if (currentView.subView === 'fixtures') content = renderFixtures(t);
+    else if (currentView.subView === 'standings') content = renderStandingsTable(t);
+    else if (currentView.subView === 'knockout') content = renderKnockout(t);
+    else content = renderFixtures(t);
+
+    return '<button class="back-link" id="backToList">← All Tournaments</button>' +
+      '<div style="font-family:var(--font-display);font-weight:800;font-size:17px;color:var(--ink);margin-bottom:12px;text-transform:uppercase;letter-spacing:0.02em;">' + escapeHtml(label) + '</div>' +
+      subTabs + content;
+  }
+
+  function renderFixtures(t) {
+    var groupFixtures = t.fixtures.filter(function (f) { return f.stage === 'group'; });
+    if (groupFixtures.length === 0) return '<p style="color:var(--ink-soft);font-size:13px;">No fixtures yet.</p>';
+
+    return '<p class="section-label" style="margin-top:4px;">Group Stage</p>' +
+      groupFixtures.map(function (f) { return renderFixtureCard(t, f); }).join('');
+  }
+
+  function renderFixtureCard(t, f) {
+    var teamA = t.teams[f.teamA];
+    var teamB = t.teams[f.teamB];
+    var isActive = activeFixtureId === f.id;
+    var stageClass = (f.stage === 'semifinal' || f.stage === 'final' || f.stage === 'thirdPlace') ? ' knockout' : '';
+    var stageLabel = f.stage === 'group' ? 'Group' : f.stage === 'semifinal' ? 'Semifinal' : f.stage === 'final' ? 'Final' : '3rd Place';
+
+    if (f.status === 'completed') {
+      var aWon = f.scoreA > f.scoreB;
+      return '<div class="fixture-card completed" data-fid="' + f.id + '">' +
+        '<div class="f-stage' + stageClass + '">' + stageLabel + '</div>' +
+        '<div class="f-teams">' +
+        '<span class="f-team" style="' + (aWon ? '' : 'color:var(--ink-soft);font-weight:500;') + '">' + escapeHtml(teamA[0]) + ' & ' + escapeHtml(teamA[1]) + '</span>' +
+        '<span class="f-vs">vs</span>' +
+        '<span class="f-team" style="' + (aWon ? 'color:var(--ink-soft);font-weight:500;' : '') + '">' + escapeHtml(teamB[0]) + ' & ' + escapeHtml(teamB[1]) + '</span>' +
+        '<span class="f-score">' + f.scoreA + '–' + f.scoreB + '</span></div>' +
+        '<div class="f-done">✓ Completed</div></div>';
+    }
+
+    if (isActive) {
+      return '<div class="fixture-card active-entry" data-fid="' + f.id + '">' +
+        '<div class="f-stage' + stageClass + '">' + stageLabel + '</div>' +
+        '<div class="f-teams">' +
+        '<span class="f-team">' + escapeHtml(teamA[0]) + ' & ' + escapeHtml(teamA[1]) + '</span>' +
+        '<span class="f-vs">vs</span>' +
+        '<span class="f-team">' + escapeHtml(teamB[0]) + ' & ' + escapeHtml(teamB[1]) + '</span></div>' +
+        '<div class="score-row">' +
+        '<input type="number" min="0" inputmode="numeric" id="scoreA_' + f.id + '" placeholder="0">' +
+        '<span class="sep">–</span>' +
+        '<input type="number" min="0" inputmode="numeric" id="scoreB_' + f.id + '" placeholder="0">' +
+        '<button class="btn-save" data-save-fid="' + f.id + '">Save</button></div></div>';
+    }
+
+    return '<div class="fixture-card" data-fid="' + f.id + '">' +
+      '<div class="f-stage' + stageClass + '">' + stageLabel + '</div>' +
+      '<div class="f-teams">' +
+      '<span class="f-team">' + escapeHtml(teamA[0]) + ' & ' + escapeHtml(teamA[1]) + '</span>' +
+      '<span class="f-vs">vs</span>' +
+      '<span class="f-team">' + escapeHtml(teamB[0]) + ' & ' + escapeHtml(teamB[1]) + '</span></div>' +
+      '<div class="f-hint">Tap to play</div></div>';
+  }
+
+  function renderStandingsTable(t) {
+    var standings = computeTournamentStandings(t);
+    var rows = standings.map(function (s) {
+      var team = t.teams[s.teamIndex];
+      var diffClass = s.diff > 0 ? 'pos' : (s.diff < 0 ? 'neg' : '');
+      var diffLabel = (s.diff > 0 ? '+' : '') + s.diff;
+      return '<tr><td class="num">' + s.rank + '</td><td class="name">' + escapeHtml(team[0]) + ' & ' + escapeHtml(team[1]) + '</td>' +
+        '<td class="num">' + s.played + '</td><td class="num">' + s.wins + '</td><td class="num">' + s.losses + '</td>' +
+        '<td class="num"><span class="team-diff ' + diffClass + '">' + diffLabel + '</span></td>' +
+        '<td class="num pts">' + s.pts + '</td></tr>';
+    }).join('');
+
+    return '<div class="standings-wrap"><table><thead><tr>' +
+      '<th class="num">#</th><th>Team</th><th class="num">P</th><th class="num">W</th><th class="num">L</th><th class="num">Diff</th><th class="num">Pts</th>' +
+      '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+  }
+
+  function renderKnockout(t) {
+    var knockoutFixtures = t.fixtures.filter(function (f) { return f.stage !== 'group'; });
+
+    var teamOpts = t.teams.map(function (team, i) {
+      return '<option value="' + i + '">' + escapeHtml(team[0]) + ' & ' + escapeHtml(team[1]) + '</option>';
+    }).join('');
+
+    var buttons = '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;">' +
+      '<button class="btn-new" data-add-stage="semifinal">+ Add Semifinal</button>' +
+      '<button class="btn-new" data-add-stage="final">+ Add Final</button>' +
+      '<button class="btn-new" data-add-stage="thirdPlace">+ Add 3rd Place</button></div>';
+
+    var addFormHtml = '<div id="knockoutAddForm" style="display:none;" class="new-game-form">' +
+      '<div class="form-row"><span class="form-label" id="knockoutStageLabel">Semifinal</span></div>' +
+      '<div class="form-row"><select id="koTeamA"><option value="">— Select Team —</option>' + teamOpts + '</select>' +
+      '<span style="color:var(--ink-soft);font-size:12px;">vs</span>' +
+      '<select id="koTeamB"><option value="">— Select Team —</option>' + teamOpts + '</select></div>' +
+      '<div style="display:flex;gap:8px;justify-content:flex-end;">' +
+      '<button class="btn btn-secondary" id="koCancel">Cancel</button>' +
+      '<button class="btn btn-primary" id="koAdd">Add Match</button></div></div>';
+
+    var cards = knockoutFixtures.length === 0 ?
+      '<p style="color:var(--ink-soft);font-size:13px;">No knockout matches yet.</p>' :
+      knockoutFixtures.map(function (f) { return renderFixtureCard(t, f); }).join('');
+
+    return buttons + addFormHtml + cards;
+  }
+
+  function saveFixtureScore(tournamentId, fixtureId, scoreA, scoreB) {
+    var t = TOURNAMENT_DATA.tournaments.find(function (t) { return t.id === tournamentId; });
+    if (!t) return false;
+    var f = t.fixtures.find(function (f) { return f.id === fixtureId; });
+    if (!f) return false;
+    if (scoreA === scoreB) return false;
+    if (scoreA === 0 && scoreB === 0) return false;
+    f.status = 'completed';
+    f.scoreA = scoreA;
+    f.scoreB = scoreB;
+    persistToLocalStorage();
+    return true;
+  }
+
+  function attachTournamentHandlers(t) {
+    var el = document.getElementById('panel-tournament');
+
+    document.getElementById('backToList').addEventListener('click', function () {
+      currentView.tournamentId = null;
+      activeFixtureId = null;
+      renderTournamentPanel();
+    });
+
+    el.querySelectorAll('.sub-tab').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        currentView.subView = btn.dataset.sv;
+        activeFixtureId = null;
+        renderTournamentPanel();
+      });
+    });
+
+    el.querySelectorAll('.fixture-card:not(.completed):not(.active-entry)').forEach(function (card) {
+      card.addEventListener('click', function () {
+        activeFixtureId = card.dataset.fid;
+        renderTournamentPanel();
+      });
+    });
+
+    el.querySelectorAll('.fixture-card.completed').forEach(function (card) {
+      card.addEventListener('click', function () {
+        var f = t.fixtures.find(function (f) { return f.id === card.dataset.fid; });
+        if (f) { f.status = 'pending'; f.scoreA = null; f.scoreB = null; persistToLocalStorage(); }
+        activeFixtureId = card.dataset.fid;
+        renderTournamentPanel();
+      });
+    });
+
+    el.querySelectorAll('[data-save-fid]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var fid = btn.dataset.saveFid;
+        var scoreA = +document.getElementById('scoreA_' + fid).value;
+        var scoreB = +document.getElementById('scoreB_' + fid).value;
+        if (scoreA === scoreB || (scoreA === 0 && scoreB === 0)) return;
+        var ok = saveFixtureScore(t.id, fid, scoreA, scoreB);
+        if (ok) {
+          activeFixtureId = null;
+          renderTournamentPanel();
+          renderApp();
+        }
+      });
+    });
+
+    el.querySelectorAll('[data-add-stage]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var stage = btn.dataset.addStage;
+        var stageLabels = { semifinal: 'Semifinal', final: 'Final', thirdPlace: '3rd Place' };
+        document.getElementById('knockoutAddForm').style.display = 'block';
+        document.getElementById('knockoutStageLabel').textContent = stageLabels[stage] || stage;
+        document.getElementById('knockoutAddForm').dataset.stage = stage;
+      });
+    });
+
+    var koCancel = document.getElementById('koCancel');
+    if (koCancel) koCancel.addEventListener('click', function () {
+      document.getElementById('knockoutAddForm').style.display = 'none';
+    });
+
+    var koAdd = document.getElementById('koAdd');
+    if (koAdd) koAdd.addEventListener('click', function () {
+      var teamA = document.getElementById('koTeamA').value;
+      var teamB = document.getElementById('koTeamB').value;
+      var stage = document.getElementById('knockoutAddForm').dataset.stage;
+      if (teamA === '' || teamB === '' || teamA === teamB) return;
+      var maxId = t.fixtures.reduce(function (max, f) {
+        var n = parseInt(f.id.replace('f_', ''), 10);
+        return n > max ? n : max;
+      }, -1);
+      t.fixtures.push({
+        id: 'f_' + (maxId + 1),
+        teamA: +teamA,
+        teamB: +teamB,
+        stage: stage,
+        status: 'pending',
+        scoreA: null,
+        scoreB: null
+      });
+      persistToLocalStorage();
+      document.getElementById('knockoutAddForm').style.display = 'none';
+      renderTournamentPanel();
+    });
   }
 
   // ---- Tournament tab: list view + creation form ----
