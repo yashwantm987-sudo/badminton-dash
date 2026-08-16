@@ -1,0 +1,17 @@
+{
+  "name": "Badminton Dash",
+  "short_name": "BadmintonDash",
+  "description": "Saturday & Sunday Badminton Tournament & Games Tracker",
+  "start_url": "badminton-dash.html",
+  "display": "standalone",
+  "background_color": "#161f38",
+  "theme_color": "#161f38",
+  "icons": [
+    {
+      "src": "icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
