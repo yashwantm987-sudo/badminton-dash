@@ -816,24 +816,29 @@
       })
       .then(function(result) {
         isSyncing = false;
-        if (!result || !result.data || Object.keys(result.data).length === 0) {
-          updateSyncIndicator('synced', 'Synced');
+        var remoteHasData = result && result.data && result.data.tournaments && result.data.tournaments.length > 0;
+        var localHasData = TOURNAMENT_DATA && TOURNAMENT_DATA.tournaments && TOURNAMENT_DATA.tournaments.length > 0;
+
+        if (!remoteHasData && localHasData) {
+          syncPush();
           return;
         }
 
-        var localModified = TOURNAMENT_DATA.lastModified || '1970-01-01T00:00:00.000Z';
-        var remoteModified = result.lastModified || '1970-01-01T00:00:00.000Z';
+        if (remoteHasData) {
+          var localModified = TOURNAMENT_DATA.lastModified || '1970-01-01T00:00:00.000Z';
+          var remoteModified = result.lastModified || '1970-01-01T00:00:00.000Z';
 
-        if (new Date(remoteModified) > new Date(localModified)) {
-          TOURNAMENT_DATA = result.data;
-          TOURNAMENT_DATA.lastModified = remoteModified;
-          try {
-            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(TOURNAMENT_DATA));
-          } catch (e) {}
-          renderApp();
-          updateSyncIndicator('synced', 'Updated from cloud');
-        } else if (new Date(localModified) > new Date(remoteModified)) {
-          syncPush();
+          if (new Date(remoteModified) >= new Date(localModified) || !localHasData) {
+            TOURNAMENT_DATA = result.data;
+            TOURNAMENT_DATA.lastModified = remoteModified;
+            try {
+              localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(TOURNAMENT_DATA));
+            } catch (e) {}
+            renderApp();
+            updateSyncIndicator('synced', 'Updated from cloud');
+          } else {
+            syncPush();
+          }
         } else {
           updateSyncIndicator('synced', 'Synced');
         }
@@ -967,17 +972,23 @@
     return fixtures;
   }
 
-  var TOURNAMENT_DATA = JSON.parse(document.getElementById('tournament-data').textContent);
+  var SEED_DATA = JSON.parse(document.getElementById('tournament-data').textContent);
+  var TOURNAMENT_DATA = SEED_DATA;
   var restoredFromLocalStorage = false;
   try {
     var saved = localStorage.getItem(LOCAL_STORAGE_KEY);
     if (saved) {
-      TOURNAMENT_DATA = JSON.parse(saved);
-      restoredFromLocalStorage = true;
+      var parsedSaved = JSON.parse(saved);
+      if (parsedSaved && parsedSaved.tournaments && parsedSaved.tournaments.length > 0) {
+        TOURNAMENT_DATA = parsedSaved;
+        restoredFromLocalStorage = true;
+      }
     }
   } catch (e) {}
 
-  if (!TOURNAMENT_DATA.tournaments) TOURNAMENT_DATA.tournaments = [];
+  if (!TOURNAMENT_DATA.tournaments || TOURNAMENT_DATA.tournaments.length === 0) {
+    TOURNAMENT_DATA.tournaments = SEED_DATA.tournaments || [];
+  }
   if (!TOURNAMENT_DATA.normalGames) TOURNAMENT_DATA.normalGames = [];
   if (!TOURNAMENT_DATA.matchDays) TOURNAMENT_DATA.matchDays = [];
 
