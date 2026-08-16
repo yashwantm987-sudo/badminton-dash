@@ -1,7 +1,8 @@
-const CACHE_NAME = 'badminton-dash-v1';
+const CACHE_NAME = 'badminton-dash-v2';
 const ASSETS_TO_CACHE = [
   './',
   './badminton-dash.html',
+  './index.html',
   './manifest.json',
   './icons/icon.svg'
 ];
@@ -30,7 +31,7 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch: Cache-first for app assets, Network-only for sync API
+// Fetch: Network-first for HTML pages, Cache-first for other static assets
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
@@ -39,30 +40,39 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Cache-first for static assets
+  // Network-first for HTML documents
+  if (event.request.mode === 'navigate' || url.pathname.endsWith('.html') || url.pathname.endsWith('/')) {
+    event.respondWith(
+      fetch(event.request).then((networkResponse) => {
+        if (networkResponse && networkResponse.status === 200) {
+          const responseToCache = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseToCache));
+        }
+        return networkResponse;
+      }).catch(() => {
+        return caches.match(event.request);
+      })
+    );
+    return;
+  }
+
+  // Cache-first for assets
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) {
-        // Return cached asset and update cache in background
         fetch(event.request).then((networkResponse) => {
           if (networkResponse && networkResponse.status === 200) {
             caches.open(CACHE_NAME).then((cache) => cache.put(event.request, networkResponse));
           }
-        }).catch(() => {/* ignore network errors while offline */});
-
+        }).catch(() => {});
         return cachedResponse;
       }
-
       return fetch(event.request).then((networkResponse) => {
         if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
           return networkResponse;
         }
-
         const responseToCache = networkResponse.clone();
-        caches.open(CACHE_NAME).then((cache) => {
-          cache.put(event.request, responseToCache);
-        });
-
+        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseToCache));
         return networkResponse;
       });
     })

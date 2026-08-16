@@ -978,20 +978,23 @@
     persistToLocalStorage();
   }
 
-  function generateRoundRobinFixtures(teamCount) {
+  function generateRoundRobinFixtures(teamCount, roundsCount) {
+    var rounds = parseInt(roundsCount, 10) || 1;
     var fixtures = [];
     var counter = 0;
-    for (var i = 0; i < teamCount; i++) {
-      for (var j = i + 1; j < teamCount; j++) {
-        fixtures.push({
-          id: 'f_' + counter++,
-          teamA: i,
-          teamB: j,
-          stage: 'group',
-          status: 'pending',
-          scoreA: null,
-          scoreB: null
-        });
+    for (var r = 0; r < rounds; r++) {
+      for (var i = 0; i < teamCount; i++) {
+        for (var j = i + 1; j < teamCount; j++) {
+          fixtures.push({
+            id: 'f_' + counter++,
+            teamA: i,
+            teamB: j,
+            stage: 'group',
+            status: 'pending',
+            scoreA: null,
+            scoreB: null
+          });
+        }
       }
     }
     return fixtures;
@@ -1342,10 +1345,10 @@
     });
   }
 
-  var newTournamentState = { teams: [{ a: '', b: '' }, { a: '', b: '' }, { a: '', b: '' }] };
+  var newTournamentState = { rounds: 2, teams: [{ a: '', b: '' }, { a: '', b: '' }, { a: '', b: '' }] };
 
   function showNewTournamentForm() {
-    newTournamentState = { teams: [{ a: '', b: '' }, { a: '', b: '' }, { a: '', b: '' }] };
+    newTournamentState = { rounds: 2, teams: [{ a: '', b: '' }, { a: '', b: '' }, { a: '', b: '' }] };
     var formEl = document.getElementById('newTournamentForm');
     formEl.style.display = 'block';
     document.getElementById('newTournamentBtn').style.display = 'none';
@@ -1373,11 +1376,19 @@
     var hasDup = Object.keys(chosen).some(function (k) { return chosen[k] > 1; });
     var canGenerate = teamsComplete && !hasDup;
 
+    var curRounds = newTournamentState.rounds || 2;
+    var roundsOptionsHtml = [1, 2, 3, 4].map(function (r) {
+      return '<option value="' + r + '"' + (r === curRounds ? ' selected' : '') + '>' +
+        r + (r === 1 ? ' Round (Single Round-Robin)' : ' Rounds (Double Round-Robin)') + '</option>';
+    }).join('');
+
     formEl.innerHTML = '<div class="new-game-form">' +
       '<div class="form-row"><span class="form-label">Tournament name (optional)</span>' +
-      '<input type="text" id="ntName" placeholder="e.g. Saturday Tournament" style="flex:1;"></div>' +
+      '<input type="text" id="ntName" placeholder="e.g. Sunday Tournament" style="flex:1;"></div>' +
       '<div class="form-row"><span class="form-label">Date</span>' +
       '<input type="date" id="ntDate" value="' + new Date().toISOString().slice(0, 10) + '"></div>' +
+      '<div class="form-row"><span class="form-label">Number of Rounds</span>' +
+      '<select id="ntRounds" style="flex:1;">' + roundsOptionsHtml + '</select></div>' +
       '<div class="form-row"><span class="form-label">Teams</span></div>' +
       teamRowsHtml +
       '<button class="btn btn-add" id="ntAddTeam" type="button" style="margin-bottom:10px;">+ Add team</button>' +
@@ -1385,6 +1396,10 @@
       '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px;">' +
       '<button class="btn btn-secondary" id="ntCancel" type="button">Cancel</button>' +
       '<button class="btn btn-primary" id="ntGenerate" type="button"' + (canGenerate ? '' : ' disabled') + '>Generate Fixtures</button></div></div>';
+
+    document.getElementById('ntRounds').addEventListener('change', function (e) {
+      newTournamentState.rounds = parseInt(e.target.value, 10) || 1;
+    });
 
     formEl.querySelectorAll('.nt-team-select').forEach(function (sel) {
       sel.addEventListener('change', function () {
@@ -1409,15 +1424,17 @@
     });
     document.getElementById('ntGenerate').addEventListener('click', function () {
       var teams = newTournamentState.teams.map(function (t) { return [t.a, t.b]; });
+      var rounds = parseInt(document.getElementById('ntRounds').value, 10) || 1;
       var tournament = {
         id: 't_' + Date.now(),
         name: document.getElementById('ntName').value.trim(),
         date: document.getElementById('ntDate').value,
         teams: teams,
-        fixtures: generateRoundRobinFixtures(teams.length)
+        fixtures: generateRoundRobinFixtures(teams.length, rounds)
       };
       TOURNAMENT_DATA.tournaments.push(tournament);
       persistToLocalStorage();
+      syncPush();
       currentView.tournamentId = tournament.id;
       currentView.subView = 'fixtures';
       renderTournamentPanel();
