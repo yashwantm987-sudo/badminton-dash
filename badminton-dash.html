@@ -1823,20 +1823,140 @@
 
   // ---- end normal games tab ----
 
-  function renderApp() {
-    var playerStats = computePlayerStats(TOURNAMENT_DATA.players, TOURNAMENT_DATA.matchDays);
-    var leaderboard = computeLeaderboard(playerStats);
-    var partnerships = computePartnershipStats(TOURNAMENT_DATA.matchDays);
+  function computeSeasonLeaderboard(players, tournaments) {
+    var pointsMap = {};
+    players.forEach(function (name) { pointsMap[name] = 0; });
 
-    setHtmlIfPresent('leaderboardEl', renderLeaderboard(leaderboard));
-    setHtmlIfPresent('playersTableEl', renderPlayerStatsTable(playerStats));
-    setHtmlIfPresent('playerStatsEl', renderPlayerStatsTable(playerStats));
-    setHtmlIfPresent('partnersEl', renderPartnerships(partnerships));
+    tournaments.forEach(function (t) {
+      var placement = getTournamentPlacement(t);
+      placement.forEach(function (p) {
+        p.players.forEach(function (name) {
+          if (pointsMap[name] !== undefined) pointsMap[name] += p.points;
+        });
+      });
+    });
+
+    var sorted = players.map(function (name) {
+      return { name: name, points: pointsMap[name] };
+    }).sort(function (a, b) { return b.points - a.points; });
+
+    var places = sorted.map(function (p, i) {
+      if (i === 0) return 1;
+      return sorted[i - 1].points === p.points ? null : i + 1;
+    });
+    for (var i = 1; i < places.length; i++) {
+      if (places[i] === null) places[i] = places[i - 1];
+    }
+    var counts = {};
+    places.forEach(function (pl) { counts[pl] = (counts[pl] || 0) + 1; });
+
+    return sorted.map(function (p, i) {
+      return { name: p.name, points: p.points, place: places[i], tied: counts[places[i]] > 1 };
+    });
+  }
+
+  function getTournamentPlacement(t) {
+    var finalMatch = t.fixtures.find(function (f) { return f.stage === 'final' && f.status === 'completed'; });
+    var thirdMatch = t.fixtures.find(function (f) { return f.stage === 'thirdPlace' && f.status === 'completed'; });
+
+    if (finalMatch) {
+      var result = [];
+      var winner = finalMatch.scoreA > finalMatch.scoreB ? finalMatch.teamA : finalMatch.teamB;
+      var loser = finalMatch.scoreA > finalMatch.scoreB ? finalMatch.teamB : finalMatch.teamA;
+      result.push({ players: t.teams[winner], points: 3 });
+      result.push({ players: t.teams[loser], points: 2 });
+      if (thirdMatch) {
+        var tw = thirdMatch.scoreA > thirdMatch.scoreB ? thirdMatch.teamA : thirdMatch.teamB;
+        var tl = thirdMatch.scoreA > thirdMatch.scoreB ? thirdMatch.teamB : thirdMatch.teamA;
+        result.push({ players: t.teams[tw], points: 1 });
+        result.push({ players: t.teams[tl], points: 0 });
+      }
+      return result;
+    }
+
+    var standings = computeTournamentStandings(t);
+    var hasCompleted = t.fixtures.some(function (f) { return f.status === 'completed'; });
+    if (!hasCompleted) return [];
+
+    return standings.map(function (s) {
+      return { players: t.teams[s.teamIndex], points: pointsForRank(s.rank) };
+    });
+  }
+
+  function renderApp() {
+    var seasonLB = computeSeasonLeaderboard(TOURNAMENT_DATA.players, TOURNAMENT_DATA.tournaments);
+    setHtmlIfPresent('leaderboardEl', renderLeaderboard(seasonLB));
 
     if (currentView.tab === 'tournament') {
       renderTournamentPanel();
     } else if (currentView.tab === 'normal') {
       renderNormalGamesPanel();
+    } else if (currentView.tab === 'leaderboard') {
+      setHtmlIfPresent('leaderboardPanel',
+        '<p class="section-label">Season Leaderboard</p>' +
+        '<div class="leaderboard" style="flex-wrap:wrap;">' + renderLeaderboard(seasonLB) + '</div>');
+      setHtmlIfPresent('playersTableEl', '');
+    } else if (currentView.tab === 'players') {
+      var normalStats = computeNormalGameStats(TOURNAMENT_DATA.players, TOURNAMENT_DATA.normalGames);
+      var rows = seasonLB.map(function (o) {
+        var ns = normalStats.find(function (n) { return n.name === o.name; }) || { gamesPlayed: 0, wins: 0, winPct: 0, currentStreak: 0 };
+        var tGames = 0, tWins = 0;
+        TOURNAMENT_DATA.tournaments.forEach(function (t) {
+          t.fixtures.forEach(function (f) {
+            if (f.status !== 'completed') return;
+            var teamIdx = -1;
+            t.teams.forEach(function (team, idx) { if (team.indexOf(o.name) !== -1) teamIdx = idx; });
+            if (teamIdx === -1) return;
+            if (f.teamA === teamIdx || f.teamB === teamIdx) {
+              tGames++;
+              if ((f.teamA === teamIdx && f.scoreA > f.scoreB) || (f.teamB === teamIdx && f.scoreB > f.scoreA)) tWins++;
+            }
+          });
+        });
+        return '<tr><td class="name">' + escapeHtml(o.name) + '</td>' +
+          '<td class="num pts">' + o.points + '</td>' +
+          '<td class="num">' + tGames + '</td><td class="num">' + tWins + '</td>' +
+          '<td class="num">' + ns.gamesPlayed + '</td><td class="num">' + ns.wins + '</td></tr>';
+      }).join('');
+
+      setHtmlIfPresent('playerStatsEl',
+        '<table><thead><tr><th>Player</th><th class="num">Season Pts</th>' +
+        '<th class="num">T Games</th><th class="num">T Wins</th>' +
+        '<th class="num">N Games</th><th class="num">N Wins</th></tr></thead>' +
+        '<tbody>' + rows + '</tbody></table>');
+    } else if (currentView.tab === 'partners') {
+      var allGames = [];
+      TOURNAMENT_DATA.tournaments.forEach(function (t) {
+        t.fixtures.forEach(function (f) {
+          if (f.status !== 'completed') return;
+          allGames.push({ teamA: t.teams[f.teamA], teamB: t.teams[f.teamB], scoreA: f.scoreA, scoreB: f.scoreB });
+        });
+      });
+      TOURNAMENT_DATA.normalGames.forEach(function (g) {
+        allGames.push({ teamA: g.teamA, teamB: g.teamB, scoreA: g.scoreA, scoreB: g.scoreB });
+      });
+
+      var map = {};
+      allGames.forEach(function (g) {
+        [g.teamA, g.teamB].forEach(function (team, tIdx) {
+          var pair = team.slice().sort();
+          var key = pair.join('|');
+          if (!map[key]) map[key] = { players: pair, timesPlayed: 0, wins: 0 };
+          map[key].timesPlayed++;
+          var won = (tIdx === 0 && g.scoreA > g.scoreB) || (tIdx === 1 && g.scoreB > g.scoreA);
+          if (won) map[key].wins++;
+        });
+      });
+
+      var partnerships = Object.keys(map).map(function (key) {
+        var p = map[key];
+        return { players: p.players, timesPlayed: p.timesPlayed, wins: p.wins, winPct: p.wins / p.timesPlayed };
+      }).sort(function (a, b) {
+        if (b.winPct !== a.winPct) return b.winPct - a.winPct;
+        return b.timesPlayed - a.timesPlayed;
+      });
+
+      setHtmlIfPresent('partnersEl', renderPartnerships(partnerships));
     }
   }
 
