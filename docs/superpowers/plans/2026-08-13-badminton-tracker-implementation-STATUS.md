@@ -1,13 +1,14 @@
 # Badminton Tracker — Handoff / Status
 
-Written: 2026-08-14, paused at the user's request mid-Task-19.
+Written: 2026-08-14, paused at the user's request mid-Task-19. Updated 2026-08-16 with a second pass ensuring everything is captured in writing.
 
 ## TL;DR — how to resume
 
 1. Read this whole file first.
 2. `cd "C:\Badminton Dash\.worktrees\badminton-tracker-impl"` — this is the worktree, on branch `badminton-tracker-impl`, branched from master at `ebb66fe`.
-3. **There are uncommitted changes in `badminton-dash.html`** — Task 19's code appears to be fully written but has **not been browser-verified or committed**. See "Where Task 19 was interrupted" below before doing anything else with it.
+3. **There are uncommitted changes in `badminton-dash.html`** — Task 19's code appears to be fully written but has **not been browser-verified or committed**. See "Where Task 19 was interrupted" below before doing anything else with it. A safety copy of this exact diff is also saved at `docs/superpowers/plans/2026-08-13-badminton-tracker-task19-wip.patch` (git-tracked, so it survives even if the worktree is ever removed) — apply with `git apply docs/superpowers/plans/2026-08-13-badminton-tracker-task19-wip.patch` from the worktree root if the live uncommitted state is ever lost.
 4. Invoke `superpowers:subagent-driven-development` (same skill used for everything so far) and continue from Task 19. The plan file already has Task 19's brief text ready to extract via `scripts/task-brief`.
+5. **Unrelated loose end found while writing this update:** there's an untracked `badminton-dash.html` sitting at the *main repo root* (`C:\Badminton Dash\badminton-dash.html`, not the worktree) — confirmed byte-for-byte identical to Task 18's committed state (i.e. missing Task 19's changes). I never wrote it there; it wasn't created by any action in this session's history. It was already showing as an untracked file (`?? badminton-dash.html`) in the repo status at the very start of this session, so it likely predates this conversation — possibly a download/copy made while testing the app. Left untouched; worth asking the user whether it's disposable or something they want kept before it's ever cleaned up.
 
 ## What this project is
 

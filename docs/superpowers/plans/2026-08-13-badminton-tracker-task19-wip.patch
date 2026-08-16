@@ -1,0 +1,146 @@
+diff --git a/badminton-dash.html b/badminton-dash.html
+index 3529bda..b91b3e2 100644
+--- a/badminton-dash.html
++++ b/badminton-dash.html
+@@ -632,6 +632,12 @@
+   .modal-subtab.active { color: var(--amber-deep); border-bottom-color: var(--amber); }
+   .modal-subpanel { display: none; }
+   .modal-subpanel.active { display: block; }
++
++  .past-day-row { display: flex; align-items: center; justify-content: space-between; background: var(--card); border-radius: 8px; padding: 10px 12px; margin-bottom: 6px; }
++  .past-day-row .info { font-size: 13px; }
++  .past-day-row .info .d { font-weight: 700; }
++  .past-day-row .info .m { color: var(--ink-soft); font-size: 11.5px; margin-left: 6px; }
++  .past-day-actions button { margin-left: 6px; }
+ </style>
+ </head>
+ <body>
+@@ -1153,6 +1159,8 @@
+     bracket: { sf1: { a: '', b: '' }, sf2: { a: '', b: '' } }
+   };
+ 
++  var editingDayIndex = null;
++
+   var teamRowsEl = document.getElementById('teamRows');
+   var matchSectionEl = document.getElementById('matchSection');
+   var saveBtn = document.getElementById('saveBtn');
+@@ -1389,14 +1397,19 @@
+ 
+   function saveMatchDay(matches) {
+     var date = document.getElementById('dayDate').value;
+-    TOURNAMENT_DATA.matchDays.push({
+-      date: date,
+-      teams: buildDayTeamsArray(),
+-      matches: matches
+-    });
++    var dayRecord = { date: date, teams: buildDayTeamsArray(), matches: matches };
++
++    if (editingDayIndex !== null) {
++      TOURNAMENT_DATA.matchDays[editingDayIndex] = dayRecord;
++    } else {
++      TOURNAMENT_DATA.matchDays.push(dayRecord);
++    }
++
+     persistToLocalStorage();
+     renderApp();
+     document.getElementById('saveConfirm').classList.add('show');
++    editingDayIndex = null;
++    document.getElementById('modalTitle').textContent = 'Edit';
+   }
+ 
+   saveBtn.addEventListener('click', function () {
+@@ -1423,6 +1436,8 @@
+   function openModal() {
+     backdrop.classList.add('open');
+     document.getElementById('saveConfirm').classList.remove('show');
++    editingDayIndex = null;
++    document.getElementById('modalTitle').textContent = 'Edit';
+     resetPendingDay();
+     renderRoster();
+     renderAddMatchDayForm();
+@@ -1445,7 +1460,84 @@
+   });
+ 
+   function renderPastDaysList() {
+-    document.getElementById('pastDaysList').innerHTML = '<p style="color:var(--ink-soft);font-size:13px;">Wired in Task 19.</p>';
++    var container = document.getElementById('pastDaysList');
++    if (TOURNAMENT_DATA.matchDays.length === 0) {
++      container.innerHTML = '<p style="color:var(--ink-soft);font-size:13px;">No match days recorded yet.</p>';
++      return;
++    }
++    var sorted = TOURNAMENT_DATA.matchDays.map(function (d, i) { return { day: d, index: i }; })
++      .sort(function (a, b) { return a.day.date < b.day.date ? 1 : a.day.date > b.day.date ? -1 : 0; });
++
++    container.innerHTML = sorted.map(function (entry) {
++      return '<div class="past-day-row"><div class="info"><span class="d">' + formatDayHeading(entry.day.date) + '</span>' +
++        '<span class="m">' + entry.day.teams.length + ' teams · ' + entry.day.matches.length + ' matches</span></div>' +
++        '<div class="past-day-actions">' +
++        '<button class="btn btn-secondary" data-edit-day="' + entry.index + '" type="button">Edit</button>' +
++        '<button class="btn btn-secondary" data-delete-day="' + entry.index + '" type="button">Delete</button>' +
++        '</div></div>';
++    }).join('');
++
++    container.querySelectorAll('[data-edit-day]').forEach(function (btn) {
++      btn.addEventListener('click', function () { loadDayForEditing(+btn.dataset.editDay); });
++    });
++    container.querySelectorAll('[data-delete-day]').forEach(function (btn) {
++      btn.addEventListener('click', function () { deleteDay(+btn.dataset.deleteDay); });
++    });
++  }
++
++  function deleteDay(index) {
++    if (!confirm('Delete this match day? This cannot be undone.')) return;
++    TOURNAMENT_DATA.matchDays.splice(index, 1);
++    persistToLocalStorage();
++
++    // Deleting a day shifts every later index down by one. If an edit is
++    // in progress (Add Match Day switched to "Edit Match Day" mode, not yet
++    // saved), its editingDayIndex may now silently point at a different day
++    // than the one actually being edited — saving would overwrite the wrong
++    // day. Cancel any in-progress edit rather than risk that.
++    if (editingDayIndex !== null) {
++      editingDayIndex = null;
++      document.getElementById('modalTitle').textContent = 'Edit';
++      resetPendingDay();
++      renderAddMatchDayForm();
++    }
++
++    renderApp();
++    renderPastDaysList();
++  }
++
++  function loadDayForEditing(index) {
++    editingDayIndex = index;
++    var day = TOURNAMENT_DATA.matchDays[index];
++
++    pendingDay = {
++      teams: day.teams.map(function (t) { return { a: t[0], b: t[1] }; }),
++      rrMatches: [{ teamA: '', teamB: '', scoreA: '', scoreB: '' }],
++      bracket: { sf1: { a: '', b: '' }, sf2: { a: '', b: '' } }
++    };
++
++    if (day.teams.length === 4 && day.matches.some(function (m) { return m.stage === 'final'; })) {
++      var sf1 = day.matches.find(function (m) { return m.stage === 'semifinal1'; });
++      var sf2 = day.matches.find(function (m) { return m.stage === 'semifinal2'; });
++      var final = day.matches.find(function (m) { return m.stage === 'final'; });
++      var third = day.matches.find(function (m) { return m.stage === 'thirdPlace'; });
++      pendingDay.bracket.sf1 = { a: String(sf1.teamA), b: String(sf1.teamB), scoreA: sf1.scoreA, scoreB: sf1.scoreB };
++      pendingDay.bracket.sf2 = { a: sf2.teamA, b: sf2.teamB, scoreA: sf2.scoreA, scoreB: sf2.scoreB };
++      if (final) pendingDay.bracket.final = { scoreA: final.scoreA, scoreB: final.scoreB };
++      if (third) pendingDay.bracket.thirdPlace = { scoreA: third.scoreA, scoreB: third.scoreB };
++    } else {
++      pendingDay.rrMatches = day.matches.map(function (m) {
++        return { teamA: String(m.teamA), teamB: String(m.teamB), scoreA: m.scoreA, scoreB: m.scoreB };
++      });
++    }
++
++    document.getElementById('dayDate').value = day.date;
++    document.querySelectorAll('.modal-subtab').forEach(function (b) { b.classList.remove('active'); });
++    document.querySelectorAll('.modal-subpanel').forEach(function (p) { p.classList.remove('active'); });
++    document.querySelector('.modal-subtab[data-subtab="add"]').classList.add('active');
++    document.getElementById('subpanel-add').classList.add('active');
++    document.getElementById('modalTitle').textContent = 'Edit Match Day';
++    renderAddMatchDayForm();
+   }
+ 
+   function renderRoster() {
