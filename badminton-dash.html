@@ -1282,6 +1282,153 @@
     if (el) el.innerHTML = html;
   }
 
+  // ---- Tournament tab: list view + creation form ----
+
+  function renderTournamentPanel() {
+    var el = document.getElementById('panel-tournament');
+    if (!el) return;
+
+    if (currentView.tournamentId) {
+      var t = TOURNAMENT_DATA.tournaments.find(function (t) { return t.id === currentView.tournamentId; });
+      if (!t) { currentView.tournamentId = null; renderTournamentPanel(); return; }
+      if (typeof renderSingleTournament === 'function' && typeof attachTournamentHandlers === 'function') {
+        el.innerHTML = renderSingleTournament(t);
+        attachTournamentHandlers(t);
+      } else {
+        el.innerHTML = '<p style="color:var(--ink-soft);font-size:13px;">Tournament detail view — coming in Task 4.</p>';
+      }
+      return;
+    }
+
+    var html = '<button class="btn-new" id="newTournamentBtn">+ New Tournament</button>';
+
+    if (TOURNAMENT_DATA.tournaments.length === 0) {
+      html += '<p style="color:var(--ink-soft);font-size:13px;">No tournaments yet.</p>';
+    } else {
+      var sorted = TOURNAMENT_DATA.tournaments.slice().sort(function (a, b) {
+        return a.date < b.date ? 1 : a.date > b.date ? -1 : 0;
+      });
+      sorted.forEach(function (t) {
+        var completed = t.fixtures.filter(function (f) { return f.status === 'completed'; }).length;
+        var total = t.fixtures.length;
+        var label = t.name || formatDayHeading(t.date);
+        html += '<div class="tournament-list-card" data-tid="' + t.id + '">' +
+          '<div><div class="t-name">' + escapeHtml(label) + '</div>' +
+          '<div class="t-meta">' + t.teams.length + ' teams · ' + completed + '/' + total + ' matches played</div></div>' +
+          '<span class="t-arrow">›</span></div>';
+      });
+    }
+
+    html += '<div id="newTournamentForm" style="display:none;"></div>';
+    el.innerHTML = html;
+
+    document.getElementById('newTournamentBtn').addEventListener('click', showNewTournamentForm);
+    el.querySelectorAll('[data-tid]').forEach(function (card) {
+      card.addEventListener('click', function () {
+        currentView.tournamentId = card.dataset.tid;
+        currentView.subView = 'fixtures';
+        renderTournamentPanel();
+      });
+    });
+  }
+
+  var newTournamentState = { teams: [{ a: '', b: '' }, { a: '', b: '' }, { a: '', b: '' }] };
+
+  function showNewTournamentForm() {
+    newTournamentState = { teams: [{ a: '', b: '' }, { a: '', b: '' }, { a: '', b: '' }] };
+    var formEl = document.getElementById('newTournamentForm');
+    formEl.style.display = 'block';
+    document.getElementById('newTournamentBtn').style.display = 'none';
+    renderNewTournamentForm();
+  }
+
+  function renderNewTournamentForm() {
+    var formEl = document.getElementById('newTournamentForm');
+    var chosen = {};
+    newTournamentState.teams.forEach(function (t) {
+      [t.a, t.b].forEach(function (n) { if (n) chosen[n] = (chosen[n] || 0) + 1; });
+    });
+
+    var teamRowsHtml = newTournamentState.teams.map(function (t, i) {
+      var isDup = (t.a && chosen[t.a] > 1) || (t.b && chosen[t.b] > 1);
+      return '<div class="team-edit-row' + (isDup ? ' dup' : '') + '">' +
+        '<span class="team-edit-num">' + (i + 1) + '</span>' +
+        '<select data-i="' + i + '" data-slot="a" class="nt-team-select">' + playerOptions(t.a) + '</select>' +
+        '<select data-i="' + i + '" data-slot="b" class="nt-team-select">' + playerOptions(t.b) + '</select>' +
+        '<button class="row-remove" data-nt-remove="' + i + '" type="button" ' +
+        (newTournamentState.teams.length <= 3 ? 'disabled' : '') + '>&times;</button></div>';
+    }).join('');
+
+    var teamsComplete = newTournamentState.teams.every(function (t) { return t.a && t.b; });
+    var hasDup = Object.keys(chosen).some(function (k) { return chosen[k] > 1; });
+    var canGenerate = teamsComplete && !hasDup;
+
+    formEl.innerHTML = '<div class="new-game-form">' +
+      '<div class="form-row"><span class="form-label">Tournament name (optional)</span>' +
+      '<input type="text" id="ntName" placeholder="e.g. Saturday Tournament" style="flex:1;font-family:var(--font-body);font-size:13.5px;color:var(--ink);background:var(--card);border:1px solid rgba(27,35,51,0.16);border-radius:5px;padding:7px 9px;"></div>' +
+      '<div class="form-row"><span class="form-label">Date</span>' +
+      '<input type="date" id="ntDate" value="' + new Date().toISOString().slice(0, 10) + '"></div>' +
+      '<div class="form-row"><span class="form-label">Teams</span></div>' +
+      teamRowsHtml +
+      '<button class="btn btn-add" id="ntAddTeam" type="button" style="margin-bottom:10px;">+ Add team</button>' +
+      (hasDup ? '<p class="validation-msg">A player is on more than one team.</p>' : '') +
+      '<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px;">' +
+      '<button class="btn btn-secondary" id="ntCancel" type="button">Cancel</button>' +
+      '<button class="btn btn-primary" id="ntGenerate" type="button"' + (canGenerate ? '' : ' disabled') + '>Generate Fixtures</button></div></div>';
+
+    formEl.querySelectorAll('.nt-team-select').forEach(function (sel) {
+      sel.addEventListener('change', function () {
+        newTournamentState.teams[+sel.dataset.i][sel.dataset.slot] = sel.value;
+        renderNewTournamentForm();
+      });
+    });
+    formEl.querySelectorAll('[data-nt-remove]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        if (newTournamentState.teams.length <= 3) return;
+        newTournamentState.teams.splice(+btn.dataset.ntRemove, 1);
+        renderNewTournamentForm();
+      });
+    });
+    document.getElementById('ntAddTeam').addEventListener('click', function () {
+      newTournamentState.teams.push({ a: '', b: '' });
+      renderNewTournamentForm();
+    });
+    document.getElementById('ntCancel').addEventListener('click', function () {
+      document.getElementById('newTournamentForm').style.display = 'none';
+      document.getElementById('newTournamentBtn').style.display = '';
+    });
+    document.getElementById('ntGenerate').addEventListener('click', function () {
+      var teams = newTournamentState.teams.map(function (t) { return [t.a, t.b]; });
+      var tournament = {
+        id: 't_' + Date.now(),
+        name: document.getElementById('ntName').value.trim(),
+        date: document.getElementById('ntDate').value,
+        teams: teams,
+        fixtures: generateRoundRobinFixtures(teams.length)
+      };
+      TOURNAMENT_DATA.tournaments.push(tournament);
+      persistToLocalStorage();
+      currentView.tournamentId = tournament.id;
+      currentView.subView = 'fixtures';
+      renderTournamentPanel();
+    });
+  }
+
+  function createTournament(name, date, teams) {
+    var tournament = {
+      id: 't_' + Date.now(),
+      name: (name || '').trim(),
+      date: date,
+      teams: teams,
+      fixtures: generateRoundRobinFixtures(teams.length)
+    };
+    TOURNAMENT_DATA.tournaments.push(tournament);
+    persistToLocalStorage();
+    return tournament;
+  }
+
+  // ---- end tournament tab ----
+
   function renderApp() {
     var playerStats = computePlayerStats(TOURNAMENT_DATA.players, TOURNAMENT_DATA.matchDays);
     var leaderboard = computeLeaderboard(playerStats);
@@ -1291,6 +1438,10 @@
     setHtmlIfPresent('playersTableEl', renderPlayerStatsTable(playerStats));
     setHtmlIfPresent('playerStatsEl', renderPlayerStatsTable(playerStats));
     setHtmlIfPresent('partnersEl', renderPartnerships(partnerships));
+
+    if (currentView.tab === 'tournament') {
+      renderTournamentPanel();
+    }
   }
 
   var currentView = { tab: 'tournament', tournamentId: null, subView: 'fixtures' };
