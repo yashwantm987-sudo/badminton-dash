@@ -1128,9 +1128,16 @@
         placements[thirdL] = 4;
       }
 
-      standings.forEach(function (s, idx) {
+      var placedCount = Object.keys(placements).length;
+      var unplacedRank = placedCount + 1;
+      standings.forEach(function (s) {
         var teamIdx = s.teamIndex;
-        var rank = placements[teamIdx] || (idx + 1);
+        var rank;
+        if (placements[teamIdx] !== undefined) {
+          rank = placements[teamIdx];
+        } else {
+          rank = unplacedRank++;
+        }
         var pts = pointsForRank(rank);
         var team = t.teams[teamIdx];
         if (team) {
