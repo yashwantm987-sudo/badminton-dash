@@ -1822,11 +1822,11 @@
     var el = document.getElementById('leaderboardPanel');
     var seasonLB = computeSeasonLeaderboard(TOURNAMENT_DATA.players, TOURNAMENT_DATA.tournaments);
     var rows = seasonLB.map(function (p, idx) {
-      var winRate = p.matchPlayed > 0 ? Math.round((p.matchWins / p.matchPlayed) * 100) : 0;
+      var tWinRate = p.tournsPlayed > 0 ? Math.round((p.titles / p.tournsPlayed) * 100) : 0;
       return '<tr><td class="num">' + (idx + 1) + '</td><td class="name">' + escapeHtml(p.name) + '</td>' +
         '<td class="num">' + p.tournsPlayed + '</td>' +
         '<td class="num trophy-count">' + (p.titles > 0 ? p.titles + ' 🏆' : '-') + '</td>' +
-        '<td class="num">' + winRate + '%</td>' +
+        '<td class="num">' + tWinRate + '%</td>' +
         '<td class="num pts">' + p.totalPts + '</td></tr>';
     }).join('');
 
