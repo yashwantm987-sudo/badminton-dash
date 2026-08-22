@@ -1,4 +1,4 @@
-const CACHE_NAME = 'badminton-dash-v2';
+const CACHE_NAME = 'badminton-dash-v3';
 const ASSETS_TO_CACHE = [
   './',
   './badminton-dash.html',
