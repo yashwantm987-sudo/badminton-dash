@@ -566,6 +566,8 @@
   .tournament-list-card .t-name { font-size: 14.5px; font-weight: 600; color: var(--ink); }
   .tournament-list-card .t-meta { font-size: 11.5px; color: var(--ink-soft); }
   .tournament-list-card .t-arrow { color: var(--ink-soft); font-size: 18px; }
+  .tournament-list-card .t-delete { background: none; border: none; color: var(--ink-soft); font-size: 20px; cursor: pointer; padding: 4px 8px; border-radius: 4px; line-height: 1; }
+  .tournament-list-card .t-delete:hover { background: rgba(200,50,50,0.15); color: #c04040; }
 
   .back-link {
     appearance: none; background: none; border: none; color: var(--ink-soft);
@@ -1328,6 +1330,7 @@
         html += '<div class="tournament-list-card" data-tid="' + t.id + '">' +
           '<div><div class="t-name">' + escapeHtml(label) + '</div>' +
           '<div class="t-meta">' + t.teams.length + ' teams · ' + completed + '/' + total + ' matches played</div></div>' +
+          '<button class="t-delete" data-delete-tid="' + t.id + '" title="Delete tournament">&times;</button>' +
           '<span class="t-arrow">›</span></div>';
       });
     }
@@ -1336,6 +1339,21 @@
     el.innerHTML = html;
 
     document.getElementById('newTournamentBtn').addEventListener('click', showNewTournamentForm);
+
+    el.querySelectorAll('[data-delete-tid]').forEach(function (btn) {
+      btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var tid = btn.dataset.deleteTid;
+        var t = TOURNAMENT_DATA.tournaments.find(function (t) { return t.id === tid; });
+        var label = t ? (t.name || t.date) : tid;
+        if (confirm('Delete tournament "' + label + '"? This cannot be undone.')) {
+          TOURNAMENT_DATA.tournaments = TOURNAMENT_DATA.tournaments.filter(function (t) { return t.id !== tid; });
+          persistToLocalStorage();
+          renderApp();
+        }
+      });
+    });
+
     el.querySelectorAll('[data-tid]').forEach(function (card) {
       card.addEventListener('click', function () {
         currentView.tournamentId = card.dataset.tid;
