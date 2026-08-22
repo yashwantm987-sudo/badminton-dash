@@ -533,6 +533,13 @@
   .fixture-card .f-hint { font-size: 11px; color: var(--ink-soft); margin-top: 4px; }
   .fixture-card .f-done { font-size: 11px; color: var(--teal); margin-top: 4px; }
 
+  .ko-result { background: var(--card); border-radius: 12px; padding: 16px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(22,31,56,0.08); }
+  .ko-result-row { display: flex; align-items: center; gap: 10px; padding: 8px 4px; border-bottom: 1px solid rgba(128,128,128,0.1); }
+  .ko-result-row:last-child { border-bottom: none; }
+  .ko-medal { font-size: 22px; }
+  .ko-label { font-size: 11.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--ink-soft); width: 80px; }
+  .ko-team { font-size: 14.5px; font-weight: 700; color: var(--ink); }
+
   .score-row {
     display: flex; align-items: center; gap: 8px;
     margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(27,35,51,0.07);
@@ -1180,6 +1187,7 @@
 
     return players.map(function (name) {
       var played = 0, wins = 0, streak = 0, maxStreak = 0;
+      var ptsFor = 0, ptsAgainst = 0;
 
       allMatches.forEach(function (m) {
         var onA = m.teamA.indexOf(name) !== -1;
@@ -1189,6 +1197,14 @@
         played++;
         var aWon = m.scoreA > m.scoreB;
         var won = (onA && aWon) || (onB && !aWon);
+
+        if (onA) {
+          ptsFor += m.scoreA;
+          ptsAgainst += m.scoreB;
+        } else {
+          ptsFor += m.scoreB;
+          ptsAgainst += m.scoreA;
+        }
 
         if (won) {
           wins++;
@@ -1206,7 +1222,10 @@
         losses: played - wins,
         winRate: played > 0 ? Math.round((wins / played) * 100) : 0,
         streak: streak,
-        maxStreak: maxStreak
+        maxStreak: maxStreak,
+        ptsFor: ptsFor,
+        ptsAgainst: ptsAgainst,
+        ptsDiff: ptsFor - ptsAgainst
       };
     }).sort(function (a, b) {
       if (b.wins !== a.wins) return b.wins - a.wins;
@@ -1542,11 +1561,40 @@
       '</tr></thead><tbody>' + rows + '</tbody></table></div>';
   }
 
+  function renderKnockoutResult(t) {
+    var finalMatch = t.fixtures.find(function (f) { return f.stage === 'final' && f.status === 'completed'; });
+    var thirdMatch = t.fixtures.find(function (f) { return f.stage === 'thirdPlace' && f.status === 'completed'; });
+    if (!finalMatch) return '';
+
+    var winner, runnerUp, third;
+    if (finalMatch.scoreA > finalMatch.scoreB) {
+      winner = t.teams[finalMatch.teamA];
+      runnerUp = t.teams[finalMatch.teamB];
+    } else {
+      winner = t.teams[finalMatch.teamB];
+      runnerUp = t.teams[finalMatch.teamA];
+    }
+    if (thirdMatch) {
+      third = thirdMatch.scoreA > thirdMatch.scoreB ? t.teams[thirdMatch.teamA] : t.teams[thirdMatch.teamB];
+    }
+
+    var html = '<div class="ko-result">';
+    html += '<div class="ko-result-row gold"><span class="ko-medal">🥇</span><span class="ko-label">Winner</span><span class="ko-team">' + escapeHtml(winner[0]) + ' & ' + escapeHtml(winner[1]) + '</span></div>';
+    html += '<div class="ko-result-row silver"><span class="ko-medal">🥈</span><span class="ko-label">Runner-up</span><span class="ko-team">' + escapeHtml(runnerUp[0]) + ' & ' + escapeHtml(runnerUp[1]) + '</span></div>';
+    if (third) {
+      html += '<div class="ko-result-row bronze"><span class="ko-medal">🥉</span><span class="ko-label">3rd Place</span><span class="ko-team">' + escapeHtml(third[0]) + ' & ' + escapeHtml(third[1]) + '</span></div>';
+    }
+    html += '</div>';
+    return html;
+  }
+
   function renderKnockout(t) {
     var knockoutFixtures = t.fixtures.filter(function (f) { return f.stage !== 'group'; });
     var teamOpts = t.teams.map(function (team, i) {
       return '<option value="' + i + '">' + escapeHtml(team[0]) + ' & ' + escapeHtml(team[1]) + '</option>';
     }).join('');
+
+    var resultHtml = renderKnockoutResult(t);
 
     var buttons = '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;">' +
       '<button class="btn-new" data-add-stage="semifinal">+ Add Semifinal</button>' +
@@ -1566,7 +1614,7 @@
       '<p style="color:var(--ink-soft);font-size:13px;">No knockout matches added yet.</p>' :
       knockoutFixtures.map(function (f) { return renderFixtureCard(t, f); }).join('');
 
-    return buttons + addFormHtml + cards;
+    return resultHtml + buttons + addFormHtml + cards;
   }
 
   function attachTournamentHandlers(t) {
@@ -1765,15 +1813,20 @@
     var el = document.getElementById('playerStatsEl');
     var stats = computeCombinedPlayerStats(TOURNAMENT_DATA.players, TOURNAMENT_DATA.tournaments, TOURNAMENT_DATA.normalGames);
     var rows = stats.map(function (s) {
+      var diffClass = s.ptsDiff > 0 ? 'pos' : (s.ptsDiff < 0 ? 'neg' : '');
+      var diffLabel = (s.ptsDiff > 0 ? '+' : '') + s.ptsDiff;
       return '<tr><td class="name">' + escapeHtml(s.name) + '</td>' +
         '<td class="num">' + s.played + '</td><td class="num">' + s.wins + '</td><td class="num">' + s.losses + '</td>' +
         '<td class="num">' + s.winRate + '%</td>' +
+        '<td class="num">' + s.ptsFor + '</td><td class="num">' + s.ptsAgainst + '</td>' +
+        '<td class="num"><span class="team-diff ' + diffClass + '">' + diffLabel + '</span></td>' +
         '<td class="num"><span class="' + (s.streak > 1 ? 'flame' : '') + '">' + s.streak + '</span></td></tr>';
     }).join('');
 
-    el.innerHTML = '<table><thead><tr>' +
-      '<th>Player</th><th class="num">P</th><th class="num">W</th><th class="num">L</th><th class="num">Win %</th><th class="num">Streak</th>' +
-      '</tr></thead><tbody>' + rows + '</tbody></table>';
+    el.innerHTML = '<div class="standings-wrap"><table><thead><tr>' +
+      '<th>Player</th><th class="num">P</th><th class="num">W</th><th class="num">L</th><th class="num">Win %</th>' +
+      '<th class="num">PF</th><th class="num">PA</th><th class="num">+/−</th><th class="num">Streak</th>' +
+      '</tr></thead><tbody>' + rows + '</tbody></table></div>';
   }
 
   function renderPartnershipsPanel() {
