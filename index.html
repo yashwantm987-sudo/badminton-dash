@@ -1107,10 +1107,27 @@
 
   function computeSeasonLeaderboard(players, tournaments) {
     var playerPts = {};
-    players.forEach(function (p) { playerPts[p] = { name: p, totalPts: 0, titles: 0 }; });
+    players.forEach(function (p) { playerPts[p] = { name: p, totalPts: 0, titles: 0, tournsPlayed: 0, matchWins: 0, matchPlayed: 0 }; });
 
     tournaments.forEach(function (t) {
       var standings = computeTournamentStandings(t);
+      t.teams.forEach(function (team) {
+        team.forEach(function (pName) {
+          if (playerPts[pName]) playerPts[pName].tournsPlayed++;
+        });
+      });
+      t.fixtures.forEach(function (f) {
+        if (f.status !== 'completed') return;
+        var teamA = t.teams[f.teamA] || [];
+        var teamB = t.teams[f.teamB] || [];
+        var aWon = f.scoreA > f.scoreB;
+        teamA.forEach(function (pName) {
+          if (playerPts[pName]) { playerPts[pName].matchPlayed++; if (aWon) playerPts[pName].matchWins++; }
+        });
+        teamB.forEach(function (pName) {
+          if (playerPts[pName]) { playerPts[pName].matchPlayed++; if (!aWon) playerPts[pName].matchWins++; }
+        });
+      });
       var placements = {};
       var finalF = t.fixtures.find(function (f) { return f.stage === 'final' && f.status === 'completed'; });
       var thirdF = t.fixtures.find(function (f) { return f.stage === 'thirdPlace' && f.status === 'completed'; });
@@ -1805,14 +1822,17 @@
     var el = document.getElementById('leaderboardPanel');
     var seasonLB = computeSeasonLeaderboard(TOURNAMENT_DATA.players, TOURNAMENT_DATA.tournaments);
     var rows = seasonLB.map(function (p, idx) {
+      var winRate = p.matchPlayed > 0 ? Math.round((p.matchWins / p.matchPlayed) * 100) : 0;
       return '<tr><td class="num">' + (idx + 1) + '</td><td class="name">' + escapeHtml(p.name) + '</td>' +
+        '<td class="num">' + p.tournsPlayed + '</td>' +
         '<td class="num trophy-count">' + (p.titles > 0 ? p.titles + ' 🏆' : '-') + '</td>' +
+        '<td class="num">' + winRate + '%</td>' +
         '<td class="num pts">' + p.totalPts + '</td></tr>';
     }).join('');
 
     el.innerHTML = '<p class="section-label" style="margin:0 0 10px;color:var(--ink);">Season Standings</p>' +
-      '<div class="stats-table" style="margin-bottom:20px;"><table><thead><tr>' +
-      '<th class="num">Rank</th><th>Player</th><th class="num">Titles</th><th class="num">Points</th>' +
+      '<div class="standings-wrap" style="margin-bottom:20px;"><table><thead><tr>' +
+      '<th class="num">Rank</th><th>Player</th><th class="num">T</th><th class="num">Titles</th><th class="num">Win %</th><th class="num">Points</th>' +
       '</tr></thead><tbody>' + rows + '</tbody></table></div>';
   }
 
